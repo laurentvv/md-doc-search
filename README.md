@@ -100,11 +100,57 @@ Practices that make it work well in production:
 
 ## Preparing corpora
 
-Any Markdown works as-is. Recipes that measurably improve results on large docs:
+Any Markdown file works as-is. However, raw documentation crawled from the web or exported from official manuals often contains boilerplate or unindexed formatting that impairs search quality. Here is how real-world corpora are retrieved and prepared step-by-step.
 
-- **Strip crawler scaffolding** — crawl logs, nav boilerplate and metadata blocks pollute ranking (removing 1 590 junk sections from a Godot crawl fixed the top-3 noise).
-- **Promote method signatures to headings** — converting `**move_and_slide**(` to `### move_and_slide(` gave 6 391 queryable method sections in the Godot corpus and moved the exact method to rank #1.
-- **Demote pure-link headings** — `# Source: <url>` lines became `> Source: <url>` blockquotes: citable, but no longer competing as sections.
+### 1. Sourcing the documentation
+
+There are two primary ways to obtain a full documentation snapshot:
+
+#### Method A: Official Offline Exports (e.g. EPUB via Pandoc) — *Recommended when available*
+Projects like Blender publish offline EPUB or HTML archives for each LTS release.
+1. Download the versioned EPUB (e.g. `blender_manual_v5.2_en.epub` from `docs.blender.org`).
+2. Convert it into a single consolidated Markdown file with media assets extracted locally using [Pandoc](https://pandoc.org/):
+   ```bash
+   pandoc -f epub -t markdown --extract-media=media blender_manual_v5.2_en.epub -o Blender52LTSManual.md
+   ```
+   *Result:* A single ~11 MB Markdown file with all 3,000+ screenshots saved under `media/` for visual AI citations.
+
+#### Method B: Recursive Web Crawl (e.g. via Crawl4AI / Spider)
+For documentation hosted only online (e.g. Godot, Ansible):
+1. Use an LLM-friendly documentation crawler (such as [Crawl4AI](https://github.com/unclecode/crawl4ai)):
+   - Crawl the target version tree (e.g. `https://docs.godotengine.org/en/4.7/`).
+   - Convert each page to Markdown and prepend the canonical URL: `> Source: <url>`.
+   - Concatenate all pages into a single consolidated file (`godot_docs_stable_47.md`).
+
+---
+
+### 2. Post-processing & cleanup recipes
+
+Raw web crawls and exports contain navigation bars, footers, and unindexed formatting. Applying these simple regex transformations measurably improves search accuracy:
+
+#### A. Strip crawler scaffolding and navigation boilerplate
+Repeated navigation menus, sidebars, breadcrumbs, and search box templates pollute keyword frequency (IDF) and clutter sections.
+- Remove repeating blocks such as:
+  ```text
+  About | Getting started | Manual | Engine details | Community | Class reference
+  ```
+  *(Cleaning up crawler boilerplate eliminated 1,590 junk sections in the Godot corpus).*
+
+#### B. Promote method signatures to H3 headings (`###`)
+The search engine splits sections on `(?m)^#{1,3}\s`. In API documentation, method definitions are often formatted in bold markdown instead of actual headings:
+- **Transform:** `**method_name**(` &rarr; `### method_name(`
+- **Example regex replacement (Python / sed / editor):**
+  - **Find:** `(?m)^\*\*([a-zA-Z0-9_]+)\*\*\((.*)`
+  - **Replace:** `### $1($2`
+  *(In the Godot corpus, this created 6,391 dedicated method sections, moving the exact method directly to Rank #1).*
+
+#### C. Demote pure-link headings to blockquotes
+If a crawler outputs `# Source: https://...` or `# https://...` as an H1, the scoring algorithm treats the link as a page heading and splits on it:
+- **Transform:** `# Source: <url>` &rarr; `> Source: <url>`
+- **Example regex replacement:**
+  - **Find:** `(?m)^#\s+(Source:\s+https?://\S+)`
+  - **Replace:** `> $1`
+  *(This keeps the URL accessible and citable by the LLM without creating an empty competing heading).*
 
 ## Limitations
 
