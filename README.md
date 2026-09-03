@@ -98,6 +98,9 @@ Practices that make it work well in production:
 - **Prefer `ClassName methodName` queries** — with heading-aware scoring, the exact method section comes back first.
 - **Keep resolvable references**: keep screenshots on disk next to the corpus and keep canonical URLs as blockquote lines (`> Source: https://...`) so the agent can cite or fetch the original page.
 
+> [!TIP]
+> **Recommended Pipeline**: Use **[crawl4ai-mcp-llm](https://github.com/laurentvv/crawl4ai-mcp-llm)** as your crawler to fetch and snapshot live documentation into structured Markdown, then use **`md-doc-search`** for instant (~40 ms), zero-token, offline retrieval.
+
 ## Preparing corpora
 
 Any Markdown file works as-is. However, raw documentation crawled from the web or exported from official manuals often contains boilerplate or unindexed formatting that impairs search quality. Here is how real-world corpora are retrieved and prepared step-by-step.
@@ -106,7 +109,7 @@ Any Markdown file works as-is. However, raw documentation crawled from the web o
 
 There are two primary ways to obtain a full documentation snapshot:
 
-#### Method A: Official Offline Exports (e.g. EPUB via Pandoc) — *Recommended when available*
+#### Method A: Official Offline Exports (e.g. EPUB via Pandoc)
 Projects like Blender publish offline EPUB or HTML archives for each LTS release.
 1. Download the versioned EPUB (e.g. `blender_manual_v5.2_en.epub` from `docs.blender.org`).
 2. Convert it into a single consolidated Markdown file with media assets extracted locally using [Pandoc](https://pandoc.org/):
@@ -115,12 +118,31 @@ Projects like Blender publish offline EPUB or HTML archives for each LTS release
    ```
    *Result:* A single ~11 MB Markdown file with all 3,000+ screenshots saved under `media/` for visual AI citations.
 
-#### Method B: Recursive Web Crawl (e.g. via Crawl4AI / Spider)
-For documentation hosted only online (e.g. Godot, Ansible):
-1. Use an LLM-friendly documentation crawler (such as [Crawl4AI](https://github.com/unclecode/crawl4ai)):
-   - Crawl the target version tree (e.g. `https://docs.godotengine.org/en/4.7/`).
-   - Convert each page to Markdown and prepend the canonical URL: `> Source: <url>`.
-   - Concatenate all pages into a single consolidated file (`godot_docs_stable_47.md`).
+#### Method B: AI-Driven Web Crawl via [crawl4ai-mcp-llm](https://github.com/laurentvv/crawl4ai-mcp-llm) — *Recommended for online docs*
+When documentation is only available online (e.g. Godot, Ansible, frameworks):
+
+Use **[crawl4ai-mcp-llm](https://github.com/laurentvv/crawl4ai-mcp-llm)**, an MCP (Model Context Protocol) server designed specifically to allow AI assistants to crawl websites, bypass anti-bots (Cloudflare, CAPTCHAs via Magic Mode), render client-side SPAs, and extract clean, structured Markdown ready for offline search.
+
+- **Instant execution via `uvx`** (no manual installation required):
+  ```bash
+  uvx --python 3.13 crawl4ai-mcp-llm
+  ```
+- **Agent Integration** (Claude Desktop, Cursor, Antigravity, Cline):
+  Add to your AI assistant's MCP configuration (`cline_mcp_settings.json` or `claude_desktop_config.json`):
+  ```json
+  {
+    "mcpServers": {
+      "crawl": {
+        "command": "uvx",
+        "args": ["--python", "3.13", "crawl4ai-mcp-llm"]
+      }
+    }
+  }
+  ```
+- **Workflow**:
+  1. Instruct your agent to crawl the targeted version tree (e.g. `https://docs.godotengine.org/en/4.7/` or `https://docs.ansible.com/`).
+  2. `crawl4ai-mcp-llm` extracts high-quality Markdown, traverses documentation links, and prepends canonical URLs (`> Source: <url>`).
+  3. Concatenate the output into a single version-pinned Markdown file (`godot_docs_stable_47.md`).
 
 ---
 
