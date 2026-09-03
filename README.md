@@ -1,3 +1,5 @@
+![md-doc-search banner](assets/header.jpg)
+
 # md-doc-search
 
 **Offline full-text search over version-pinned Markdown documentation — built to ground AI coding agents on the exact docs version they target.**
