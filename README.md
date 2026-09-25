@@ -135,12 +135,17 @@ There are two primary ways to obtain a full documentation snapshot:
 
 #### Method A: Official Offline Exports (e.g. EPUB via Pandoc)
 Projects like Blender publish offline EPUB or HTML archives for each LTS release.
-1. Download the versioned EPUB (e.g. `blender_manual_v5.2_en.epub` from `docs.blender.org`).
+1. Download the versioned EPUB, e.g. `https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip` (Blender wraps the EPUB in a zip).
 2. Convert it into a single consolidated Markdown file with media assets extracted locally using [Pandoc](https://pandoc.org/):
    ```bash
    pandoc -f epub -t markdown --extract-media=media blender_manual_v5.2_en.epub -o Blender52LTSManual.md
    ```
    *Result:* A single ~11 MB Markdown file with all 3,000+ screenshots saved under `media/` for visual AI citations.
+
+One command does all of it (download, EPUB unwrapping, pandoc conversion, and extraction of every screenshot stored in the EPUB — pandoc alone extracts only AST-referenced media, leaving the raw-HTML `<img>` screenshots dangling):
+```bash
+python scripts/fetch_docs.py blender --epub https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip
+```
 
 #### Method B: AI-Driven Web Crawl via [crawl4ai-mcp-llm](https://github.com/laurentvv/crawl4ai-mcp-llm) — *Recommended for online docs*
 When documentation is only available online (e.g. Godot, Ansible, frameworks):
@@ -178,7 +183,7 @@ Raw web crawls contain broken code fences, navigation boilerplate and unindexed 
 ```bash
 python scripts/fetch_docs.py roblox-docs                                   # fetch via official llms.txt + normalize
 python scripts/fetch_docs.py roblox-engine
-python scripts/fetch_docs.py blender --epub <epub-url-or-path>             # pandoc conversion
+python scripts/fetch_docs.py blender --epub https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip  # download + pandoc + screenshots
 python scripts/fetch_docs.py godot                                         # normalize the existing crawled corpus
 python scripts/fetch_docs.py godot --dry-run                               # stats only
 python scripts/fetch_docs.py roblox-docs --input docs/roblox/roblox_docs.md  # normalize without re-fetching

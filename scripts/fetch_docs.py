@@ -7,6 +7,9 @@ README "Preparing corpora"):
                                of the raw .md pages -> concatenation
                                (stdlib only; port of roblox/tools/build_roblox_doc_corpus.py)
   blender                      official EPUB -> pandoc -> single .md (+ media/)
+                               (the URL may be the EPUB itself or Blender's
+                               blender_manual_epub.zip wrapper; unwrapped
+                               automatically)
   godot                        normalize-only: the crawled corpus already on
                                disk (fetching pipeline involves crawl4ai-mcp +
                                godot --doctool XML re-injection; see
@@ -30,7 +33,8 @@ statistics before/after.
 Examples:
   python scripts/fetch_docs.py roblox-docs
   python scripts/fetch_docs.py roblox-engine
-  python scripts/fetch_docs.py blender --epub https://download.blender.org/source/...  # or a local path
+  python scripts/fetch_docs.py blender --epub \
+      https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip  # or a local path
   python scripts/fetch_docs.py godot            # normalize the existing corpus
   python scripts/fetch_docs.py godot --dry-run  # stats only, write nothing
 """
@@ -44,6 +48,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -302,6 +307,38 @@ def http_get(url: str, tries: int = 3) -> bytes:
     raise RuntimeError("unreachable")
 
 
+def http_download(url: str, dest: Path):
+    """Stream a large file to disk (the Blender EPUB zip is ~500 MB)."""
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=60) as resp, open(dest, "wb") as f:
+        shutil.copyfileobj(resp, f)
+    print(f"downloaded {dest.stat().st_size / 1e6:.0f} MB -> {dest}")
+
+
+def unwrap_epub(pkg: Path) -> Path:
+    """Return the file pandoc should read. An EPUB *is* a zip (it carries
+    META-INF/container.xml); Blender ships the EPUB wrapped in a second zip
+    (blender_manual_epub.zip), which pandoc cannot read — extract the .epub
+    member next to it."""
+    if not zipfile.is_zipfile(pkg):
+        return pkg
+    with zipfile.ZipFile(pkg) as z:
+        names = z.namelist()
+    if "META-INF/container.xml" in names:
+        return pkg
+    members = [n for n in names if n.lower().endswith(".epub")]
+    if len(members) != 1:
+        return pkg  # not something we can fix; pandoc will report it
+    inner = pkg.with_name(pkg.stem + ".epub")
+    if inner == pkg:
+        inner = pkg.with_suffix(".unwrapped.epub")
+    with zipfile.ZipFile(pkg) as z, z.open(members[0]) as src, \
+            open(inner, "wb") as dst:
+        shutil.copyfileobj(src, dst)
+    print(f"unwrapped {members[0]} from {pkg.name} -> {inner.name}")
+    return inner
+
+
 def fetch_roblox(index_path: str, out_md: Path):
     """Download all .md pages listed in the official llms.txt index."""
     base = "https://create.roblox.com"
@@ -339,23 +376,48 @@ def fetch_roblox(index_path: str, out_md: Path):
     print(f"fetched {len(pages)}/{len(links)} pages -> {out_md}")
 
 
+EPUB_MEDIA_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif")
+
+
+def extract_epub_media(epub_path: Path, media_dir: Path):
+    """Copy every image stored in the EPUB into media/, preserving its path.
+
+    pandoc only extracts media referenced from its AST (title-page images):
+    the manual's screenshots sit in raw-HTML <img> blocks whose src pandoc
+    rewrites but whose files it never writes out, so without this step every
+    screenshot reference in the corpus is dangling."""
+    extracted = 0
+    with zipfile.ZipFile(epub_path) as z:
+        for info in z.infolist():
+            parts = info.filename.split("/")
+            if parts[-1].lower().endswith(EPUB_MEDIA_EXTS) and ".." not in parts:
+                dest = media_dir.joinpath(*parts)
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                with z.open(info) as src, open(dest, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                extracted += 1
+    print(f"extracted {extracted} media file(s) -> {media_dir}")
+
+
 def fetch_blender(epub: str, out_md: Path):
     """EPUB (URL or local path) -> pandoc -> markdown, media under media/."""
     if not shutil.which("pandoc"):
         sys.exit("abort: pandoc not found in PATH (see README 'Method A')")
     work = out_md.parent
     work.mkdir(parents=True, exist_ok=True)
-    epub_path = work / "manual.epub"
     if epub.startswith(("http://", "https://")):
         print(f"downloading {epub} ...")
-        epub_path.write_bytes(http_get(epub))
+        pkg = work / (epub.rsplit("/", 1)[-1].split("?")[0] or "manual.epub")
+        http_download(epub, pkg)
     else:
-        epub_path = Path(epub).resolve()
-        if not epub_path.exists():
-            sys.exit(f"abort: EPUB not found: {epub_path}")
+        pkg = Path(epub).resolve()
+        if not pkg.exists():
+            sys.exit(f"abort: EPUB not found: {pkg}")
+    epub_path = unwrap_epub(pkg)
     cmd = ["pandoc", "-f", "epub", "-t", "markdown", "--extract-media=media",
            str(epub_path), "-o", str(out_md)]
     subprocess.run(cmd, check=True, cwd=work)
+    extract_epub_media(epub_path, work / "media")
     print(f"pandoc ok -> {out_md} (media under {work / 'media'})")
 
 
