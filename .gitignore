@@ -1,3 +1,5 @@
 /target
 /docs
 *.log
+/.zcode/plans/
+__pycache__/

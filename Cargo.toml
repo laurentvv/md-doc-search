@@ -1,7 +1,13 @@
 [package]
 name = "md-doc-search"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
+rust-version = "1.85"
+description = "Offline full-text search over version-pinned Markdown documentation, tuned for AI coding agents"
+license = "MIT"
+repository = "https://github.com/laurentvv/md-doc-search"
+keywords = ["markdown", "search", "cli", "llm"]
+categories = ["command-line-utilities", "text-processing"]
 
 [dependencies]
-regex = "1.13.1"
+clap = { version = "4.5", default-features = false, features = ["std", "derive", "help", "usage", "error-context"] }

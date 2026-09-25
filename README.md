@@ -4,9 +4,9 @@
 
 **Offline full-text search over version-pinned Markdown documentation — built to ground AI coding agents on the exact docs version they target.**
 
-![Rust](https://img.shields.io/badge/rust-1.85%2B-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey)
+![Rust](https://img.shields.io/badge/rust-1.85%2B-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey) [![CI](https://github.com/laurentvv/md-doc-search/actions/workflows/ci.yml/badge.svg)](https://github.com/laurentvv/md-doc-search/actions/workflows/ci.yml)
 
-A single ~150-line Rust binary that answers *precise* technical queries (`Boolean Modifier`, `Input is_action_just_pressed`, `Volume Scatter`) against a local Markdown snapshot of the documentation you actually target — in ~40 ms, with no network, no server, and no index to maintain.
+A small dependency-light Rust binary that answers *precise* technical queries (`Boolean Modifier`, `Input is_action_just_pressed`, `Volume Scatter`) against a local Markdown snapshot of the documentation you actually target — in ~40 ms, with no network, no server, and no index to maintain.
 
 ## The problem it solves
 
@@ -20,6 +20,7 @@ Résultats de recherche pour 'Input is_action_just_pressed' :
 
 --- DÉBUT DE SECTION (Score: 156) ---
 ### is_action_just_pressed(action: , exact_match: = false) const
+> Input
 Returns `true` when the user has started pressing the action event...
 --- FIN DE SECTION ---
 ```
@@ -42,20 +43,31 @@ cargo build --release
 cargo install --path .
 ```
 
-Requires Rust 1.85+ (edition 2024). Only dependency: `regex`.
+Requires Rust 1.85+ (edition 2024). Single dependency: `clap` (argument parsing) — no regex engine, no server, no index.
 
 ## Usage
 
 ```bash
 md-doc-search <markdown_file> "<keywords>" [max_tokens] [top_k]
+md-doc-search <markdown_file> "<keywords>" --max-tokens 800 --top-k 3
 ```
 
 | Argument | Default | Description |
 |---|---|---|
 | `markdown_file` | — | path to any Markdown corpus |
 | `keywords` | — | query, as a single argument (spaces allowed, **English keywords** for English docs) |
-| `max_tokens` | `8000` | output budget (1 token ≈ 4 chars); sections are truncated to fit |
-| `top_k` | `3` | number of sections returned |
+| `max_tokens` / `--max-tokens` | `8000` | output budget (1 token ≈ 4 chars); sections are truncated to fit |
+| `top_k` / `--top-k` | `3` | number of sections returned |
+
+The legacy positional form is kept for existing `SKILL.md` files; flags are recommended for new integrations. Passing the same parameter both ways is an error, and so are non-numeric or zero values — nothing is silently replaced by a default. `--help` and `--version` are available, and `--fold-diacritics` matches accented text through its ASCII base (`é` → `e`) for non-English corpora.
+
+Exit codes follow `grep` conventions, so agents can react programmatically:
+
+| Code | Meaning |
+|---|---|
+| `0` | at least one section returned |
+| `1` | no section matches the query |
+| `2` | error (unreadable corpus, invalid argument) — details on **stderr** |
 
 Try it immediately on the bundled sample:
 
@@ -65,14 +77,18 @@ md-doc-search examples/demo.md "boolean modifier"
 
 ## How ranking works
 
-Sections are split on `#`, `##` and `###` headings, then scored:
+The corpus is split by a CommonMark-aware line scanner: `#`/`##`/`###` ATX headings **and** Setext underlines (`Title` + `====`/`----`) start a section; fenced code blocks (```` ``` ````/`~~~`) never emit headings, so a `# comment` inside a Python or Bash block stays body text; the text before the first heading is indexed too; `####` and deeper do **not** split sections. Each section remembers its heading ancestry — a `### Solver` section under `## Options` inherits the `# Boolean Modifier` page context.
+
+Sections are then scored:
 
 1. **IDF-weighted keywords** — terms rare across the corpus (`boolean`, `anisotropy`) weigh far more than ubiquitous ones (`modifier`, `options`). This alone kills the classic failure where generic "## Options" boilerplate outranks the page you want.
-2. **Page-title inheritance** — every section remembers the `#` H1 of the page that carries it. A `## Options` section under `# Boolean Modifier` gets credit for its page, so it ranks as *Boolean context*, never as orphaned boilerplate.
-3. **Heading bonuses** — matches in the section heading (+15 × weight) and owning page title (+10 × weight); ×1.4 bonus when *all* query terms appear in the heading chain.
-4. **Exact-phrase bonus** for the full query string.
-5. **Occurrence cap (20)** and **length normalization** — giant sections can't win by being giant.
-6. **Token budget** — output is truncated per section to respect `max_tokens`, with an explicit truncation marker (agents can raise the budget and re-query).
+2. **Heading bonuses** — matches in the section's own heading (+15 × weight) and in its ancestor headings (+10 × weight); ×1.4 bonus when *all* query terms appear in the heading chain.
+3. **Title-prefix bonus** — an H1/H2 heading that starts with the first keyword and contains every keyword (including CamelCase identifiers: `ResourcePreloader` for "resource preloader") gets +25 × weight, so class pages outrank method signatures that merely cite the term.
+4. **Whole-word bonus** — `input` scores higher when it matches the word `input` than when it only matches inside `inputs`.
+5. **Exact-phrase bonus** for the full keyword sequence (normalized: case and repeated spaces don't matter; skipped for single-keyword queries).
+6. **Coverage factor** — a section matching only part of the query keeps a proportional share of its score, so one repeated term cannot outrank a section covering them all.
+7. **Occurrence cap (20)** and **length normalization** — giant sections can't win by being giant. Bare headings (a `## Options` with no body) stay indexed — a word existing *only* on such a heading is still found — but their score is scaled (×0.2) so they don't steal a top-k slot from content sections.
+8. **Token budget** — output is capped at `max_tokens` (≈4 chars/token, counted in *characters*, not bytes). Sections get a greedy share of the budget: what short sections leave unused flows to longer ones. Truncation lands on a line boundary and closes a code fence left open by the cut, with an explicit truncation marker (agents can raise the budget and re-query).
 
 Sort is deterministic (score, then document order).
 
@@ -82,14 +98,22 @@ The intended deployment is a tiny agent *skill* per corpus: a `SKILL.md` that ha
 
 ```markdown
 ---
-name: blender-doc-search
-description: Search the local Blender 5.2 LTS manual. Use whenever a Blender
-  feature, operator, modifier, node, shortcut or Python API question comes up.
+name: godot-doc-search
+description: Search the local Godot 4.7 docs. Use whenever a Godot feature,
+  class, method, signal, node or GDScript question comes up.
 ---
-# Blender Doc Search
+# Godot Doc Search
 "C:/GIT/md-doc-search/target/release/md-doc-search.exe" \
-  "C:/corpora/Blender52LTSManual.md" "<english keywords>" 800
+  "C:/GIT/md-doc-search/docs/godot/godot_docs_stable_47_clean.md" \
+  "<english keywords>" --max-tokens 800
+
+Exit codes: 0 = results (read them), 1 = no match (retry with more precise
+identifiers like "ClassName method_name"), 2 = error (see stderr).
+Each result block starts with the section heading, then a `> Page > Section`
+breadcrumb line giving its context.
 ```
+
+Notes: prefer the `_clean.md` corpus when it exists (fences repaired, navigation stripped — see [Post-processing & normalization](#2-post-processing--normalization) for measured impact); regenerate after each crawl with `python scripts/fetch_docs.py <corpus>`.
 
 Practices that make it work well in production:
 
@@ -143,42 +167,56 @@ Use **[crawl4ai-mcp-llm](https://github.com/laurentvv/crawl4ai-mcp-llm)**, an MC
   1. Instruct your agent to crawl the targeted version tree (e.g. `https://docs.godotengine.org/en/4.7/` or `https://docs.ansible.com/`).
   2. `crawl4ai-mcp-llm` extracts high-quality Markdown, traverses documentation links, and prepends canonical URLs (`> Source: <url>`).
   3. Concatenate the output into a single version-pinned Markdown file (`godot_docs_stable_47.md`).
+  4. Normalize the result: `python scripts/fetch_docs.py godot` — repairs fences broken by crawler truncation and strips the per-page navigation scaffolding (see measured impact in the next section).
 
 ---
 
-### 2. Post-processing & cleanup recipes
+### 2. Post-processing & normalization
 
-Raw web crawls and exports contain navigation bars, footers, and unindexed formatting. Applying these simple regex transformations measurably improves search accuracy:
+Raw web crawls contain broken code fences, navigation boilerplate and unindexed formatting that silently corrupt section slicing — the measured impact on real corpora: 62 % of "headings" were code comments inside fences (Godot), and one unclosed fence can swallow every page after it. **`scripts/fetch_docs.py` automates retrieval and normalization**:
 
-#### A. Strip crawler scaffolding and navigation boilerplate
-Repeated navigation menus, sidebars, breadcrumbs, and search box templates pollute keyword frequency (IDF) and clutter sections.
-- Remove repeating blocks such as:
-  ```text
-  About | Getting started | Manual | Engine details | Community | Class reference
-  ```
-  *(Cleaning up crawler boilerplate eliminated 1,590 junk sections in the Godot corpus).*
+```bash
+python scripts/fetch_docs.py roblox-docs                                   # fetch via official llms.txt + normalize
+python scripts/fetch_docs.py roblox-engine
+python scripts/fetch_docs.py blender --epub <epub-url-or-path>             # pandoc conversion
+python scripts/fetch_docs.py godot                                         # normalize the existing crawled corpus
+python scripts/fetch_docs.py godot --dry-run                               # stats only
+python scripts/fetch_docs.py roblox-docs --input docs/roblox/roblox_docs.md  # normalize without re-fetching
+```
 
-#### B. Promote method signatures to H3 headings (`###`)
-The search engine splits sections on `(?m)^#{1,3}\s`. In API documentation, method definitions are often formatted in bold markdown instead of actual headings:
-- **Transform:** `**method_name**(` &rarr; `### method_name(`
-- **Example regex replacement (Python / sed / editor):**
-  - **Find:** `(?m)^\*\*([a-zA-Z0-9_]+)\*\*\((.*)`
-  - **Replace:** `### $1($2`
-  *(In the Godot corpus, this created 6,391 dedicated method sections, moving the exact method directly to Rank #1).*
+It writes `<name>_clean.md` next to the original (never touches it), refuses to write if fences remain unbalanced, and reports before/after statistics. The normalization rules, measured on the bundled corpora:
 
-#### C. Demote pure-link headings to blockquotes
-If a crawler outputs `# Source: https://...` or `# https://...` as an H1, the scoring algorithm treats the link as a page heading and splits on it:
-- **Transform:** `# Source: <url>` &rarr; `> Source: <url>`
-- **Example regex replacement:**
-  - **Find:** `(?m)^#\s+(Source:\s+https?://\S+)`
-  - **Replace:** `> $1`
-  *(This keeps the URL accessible and citable by the LLM without creating an empty competing heading).*
+| Rule | What it fixes | Measured impact |
+|---|---|---|
+| **Fence healing** (R1) | fences left open by crawler truncation (`[Content truncated due to length]` markers, page starts, `Copy to clipboard` anchors) — a missing closer inverts open/close roles for everything downstream | Godot: 2 truncation points desynchronized 172 000 lines; 1 590 trapped pages freed, headings visible went 7 664 → 16 238 |
+| **Glued-fence repair** (R2) | ```` ``` ```` runs glued mid-line (Roblox table cells, `:```bash` list items) and uncloseable 4-6 backtick openers (` ``````bash `) | Roblox docs: 656 fences repaired, headings visible 958 → 9 065, a tutorial page trapped in a phantom fence released |
+| **Scaffolding strip** (R3) | per-page nav menu, breadcrumb, `Copy to clipboard`, `* * *` separators, `User-contributed notes` footers, duplicate suffixed H1 | Godot: ~87 400 lines removed (34 %), ~9 ms faster queries |
+
+Manual equivalents (if you process another corpus by hand): strip repeated nav blocks that pollute IDF; convert `# Source: <url>` to `> Source: <url>` blockquotes so links stay citable without creating competing headings. The old "promote `**method**(` to `###`" recipe turned out to be unnecessary for the current Godot 4.7 corpus (methods are already `###` sections; 0 bold signatures found) — check before applying it.
+
+Relevance regression suite:
+
+```bash
+python scripts/relevance_check.py   # 39 assertions across all four corpora
+```
 
 ## Limitations
 
 - **Full-text, not semantic** — queries need the corpus' vocabulary. That is precisely where agents need grounding (exact identifiers), but for concept-level questions pair it with your agent's general knowledge.
 - **Linear scan** — instant up to ~100 MB corpora; beyond that, port the scoring to an indexed engine (e.g. Tantivy).
-- Output messages and truncation markers are in French (the author's language); scores and content are untouched corpus text.
+- Output section markers and truncation messages are in French (the author's language, kept stable for existing skills); scores and content are untouched corpus text, and errors go to stderr in English.
+- A Setext underline (`---`) directly following a list item line is treated as a heading — a rare markdown edge case.
+
+## Development
+
+```bash
+cargo test                                          # 40 unit + integration tests
+cargo clippy --all-targets -- -D warnings
+cargo fmt --check
+python scripts/relevance_check.py                   # relevance suite on local corpora (docs/, gitignored)
+```
+
+CI runs fmt, clippy, tests and a release build on windows / linux / macos.
 
 ## License
 
