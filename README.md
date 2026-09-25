@@ -221,7 +221,7 @@ cargo fmt --check
 python scripts/relevance_check.py                   # relevance suite on local corpora (docs/, gitignored)
 ```
 
-CI runs fmt, clippy, tests and a release build on windows / linux / macos.
+CI runs fmt, clippy, tests and a release build on windows / linux / macos. Publishing a GitHub release (tag `vX.Y.Z`) also attaches prebuilt binaries automatically (`windows-x64`, `linux-x64`, `macos-arm64`, `macos-x64` — see `.github/workflows/release.yml`).
 
 ## License
 

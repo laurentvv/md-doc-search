@@ -1,0 +1,49 @@
+name: Release
+
+# Attach prebuilt binaries to a published GitHub release. Create the release
+# (tag vX.Y.Z) as usual; this workflow adds assets for every platform, so no
+# binary has to be uploaded by hand.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  assets:
+    name: ${{ matrix.artifact }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  target: x86_64-unknown-linux-gnu, artifact: linux-x64 }
+          - { os: macos-latest,   target: aarch64-apple-darwin,    artifact: macos-arm64 }
+          - { os: macos-latest,   target: x86_64-apple-darwin,     artifact: macos-x64 }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc,  artifact: windows-x64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Test
+        run: cargo test
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Package
+        shell: bash
+        run: |
+          mkdir dist
+          name="md-doc-search-${{ github.event.release.tag_name }}-${{ matrix.artifact }}"
+          bin="target/${{ matrix.target }}/release/md-doc-search"
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp "${bin}.exe" "dist/${name}.exe"
+          else
+            tar -czf "dist/${name}.tar.gz" -C "target/${{ matrix.target }}/release" md-doc-search
+          fi
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber --repo "$GITHUB_REPOSITORY"
