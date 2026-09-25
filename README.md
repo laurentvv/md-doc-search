@@ -29,8 +29,10 @@ Real-world corpora we run daily through this exact binary:
 
 | Corpus | Size | Content | Query time |
 |---|---|---|---|
-| Blender 5.2 LTS manual | 11 MB | full manual, 3 116 referenced screenshots | ~57 ms |
+| Blender 5.2 LTS manual | 10.5 MB | full manual, 3 118 referenced screenshots | ~70 ms |
 | Godot 4.7 stable docs | 10.7 MB | 1 076 class pages + 392 tutorials | ~40 ms |
+| Roblox Creator docs | 22 MB | 2 280 guide pages via official llms.txt | ~95 ms |
+| Roblox Engine API reference | 11.6 MB | 1 194 class pages | ~55 ms |
 
 ## Install
 
@@ -173,6 +175,14 @@ Use **[crawl4ai-mcp-llm](https://github.com/laurentvv/crawl4ai-mcp-llm)**, an MC
   2. `crawl4ai-mcp-llm` extracts high-quality Markdown, traverses documentation links, and prepends canonical URLs (`> Source: <url>`).
   3. Concatenate the output into a single version-pinned Markdown file (`godot_docs_stable_47.md`).
   4. Normalize the result: `python scripts/fetch_docs.py godot` — repairs fences broken by crawler truncation and strips the per-page navigation scaffolding (see measured impact in the next section).
+
+#### Method C: Official `llms.txt` Indexes (e.g. Roblox) — *no crawler needed*
+When a project publishes an `llms.txt` index of its raw Markdown pages, prefer it over crawling: it is a plain parallel download. Roblox does (`create.roblox.com/docs/llms.txt` for guides, `create.roblox.com/docs/reference/engine/llms.txt` for the Engine API). The bundled script downloads every listed `.md` page in parallel (stdlib only — no crawler, no anti-bot layer), strips frontmatter, concatenates the pages in index order, then normalizes:
+
+```bash
+python scripts/fetch_docs.py roblox-docs        # 2 280 guide pages
+python scripts/fetch_docs.py roblox-engine      # 1 194 Engine API pages
+```
 
 ---
 
