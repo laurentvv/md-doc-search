@@ -37,6 +37,9 @@ pub enum SearchError {
     EmptyQuery,
     /// A numeric argument is out of range (must be at least 1).
     InvalidParam(&'static str),
+    /// A numeric argument is too large to be usable (overflows internal
+    /// arithmetic).
+    TooLarge(&'static str),
 }
 
 impl fmt::Display for SearchError {
@@ -45,6 +48,7 @@ impl fmt::Display for SearchError {
             SearchError::Io(e) => write!(f, "cannot read corpus file: {e}"),
             SearchError::EmptyQuery => write!(f, "query contains no keyword"),
             SearchError::InvalidParam(what) => write!(f, "{what} must be at least 1"),
+            SearchError::TooLarge(what) => write!(f, "{what} is too large"),
         }
     }
 }

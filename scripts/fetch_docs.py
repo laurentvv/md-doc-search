@@ -139,7 +139,8 @@ def heal_fences(lines):
 
         if tracker.open is not None:
             if is_marker or page_start or is_clipboard:
-                out.append("```\n")  # lines keep their endings: add ours
+                ch, length = tracker.open  # close with the actual open fence
+                out.append(ch * length + "\n")  # lines keep their endings
                 tracker.open = None
                 counts["marker" if is_marker else
                        "page-start" if page_start else "clipboard"] += 1
@@ -232,7 +233,9 @@ def strip_godot_scaffolding(lines):
                 drop_footer = False
                 drop("footer")
                 continue
-            if is_fence or stripped == "---" or stripped.startswith("> Source:") \
+            # Fence lines cannot reach here (they were kept and consumed
+            # above), so only these can end the drop.
+            if stripped == "---" or stripped.startswith("> Source:") \
                     or footer_len > 40 or stripped.startswith("#"):
                 drop_footer = False
                 out.append(line)
@@ -475,8 +478,9 @@ def main():
         process(args.corpus, raw, clean, args.dry_run)
     elif args.dry_run:
         process(args.corpus, raw, raw.with_name(raw.stem + "_clean.md"), True)
-    (raw.parent / "BUILT_AT.txt").write_text(
-        f"{args.corpus}: raw fetched/normalized {stamp}\n", encoding="utf-8")
+    if not args.dry_run:  # dry-run promises to write nothing at all
+        (raw.parent / "BUILT_AT.txt").write_text(
+            f"{args.corpus}: raw fetched/normalized {stamp}\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

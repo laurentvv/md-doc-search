@@ -66,6 +66,14 @@ fn zero_max_tokens_is_rejected() {
 }
 
 #[test]
+fn overflowing_max_tokens_is_rejected() {
+    let (code, _stdout, stderr) =
+        run(&[&demo(), "boolean", "--max-tokens", "18446744073709551615"]);
+    assert_eq!(code, 2);
+    assert!(stderr.contains("max_tokens"));
+}
+
+#[test]
 fn non_numeric_positional_is_rejected_instead_of_defaulted() {
     let (code, _stdout, _stderr) = run(&[&demo(), "boolean", "abc"]);
     assert_eq!(code, 2);

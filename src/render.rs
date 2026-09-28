@@ -26,8 +26,12 @@ pub fn render_hits(
     if max_tokens == 0 {
         return Err(SearchError::InvalidParam("max_tokens"));
     }
+    // Checked: a hostile `--max-tokens` must not wrap the budget around.
+    let budget_chars = max_tokens
+        .checked_mul(4)
+        .ok_or(SearchError::TooLarge("max_tokens"))?;
     let mut out = format!("Résultats de recherche pour '{query}' :\n\n");
-    let mut remaining = (max_tokens * 4).saturating_sub(out.chars().count());
+    let mut remaining = budget_chars.saturating_sub(out.chars().count());
 
     for (rank, hit) in outcome.hits.iter().enumerate() {
         if remaining == 0 {
@@ -146,6 +150,15 @@ mod tests {
         assert!(matches!(
             render_hits(&o, "body", 0),
             Err(SearchError::InvalidParam(_))
+        ));
+    }
+
+    #[test]
+    fn overflowing_max_tokens_is_an_error() {
+        let o = outcome("# A\n\nbody\n", "body", 1);
+        assert!(matches!(
+            render_hits(&o, "body", usize::MAX),
+            Err(SearchError::TooLarge(_))
         ));
     }
 

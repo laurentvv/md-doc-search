@@ -105,7 +105,24 @@ fn atx_heading(line: &str) -> Option<(u8, &str)> {
             return None;
         }
     }
-    Some((level, text))
+    Some((level, strip_closing_sequence(text)))
+}
+
+/// Drop an ATX closing sequence (`## Foo ##` -> heading text `Foo`): trailing
+/// `#`s count as a closing sequence only when preceded by a space/tab or when
+/// they are the whole text (an empty heading), per CommonMark.
+fn strip_closing_sequence(text: &str) -> &str {
+    let trimmed = text.trim_end();
+    let content_end = trimmed.trim_end_matches('#').len();
+    if content_end == trimmed.len() {
+        return text; // no trailing hashes
+    }
+    let before = &trimmed[..content_end];
+    if before.is_empty() || before.ends_with(' ') || before.ends_with('\t') {
+        before.trim_end()
+    } else {
+        text
+    }
 }
 
 /// Setext underline level (1 for `=`, 2 for `-`) if `line` is a bare
@@ -378,6 +395,20 @@ mod tests {
         assert_eq!(find("also").breadcrumb, ["yes"]);
         assert_eq!(find("three").breadcrumb, ["yes", "also"]);
         assert!(bodies(content)[0].contains("# indented code"));
+    }
+
+    #[test]
+    fn atx_closing_sequence_is_stripped_but_only_valid_ones() {
+        let content = "# Page ##\n\nbody\n\n### bar ### b\nstill same section\n";
+        assert_eq!(
+            headings(content)
+                .into_iter()
+                .map(|(l, t, _)| (l, t))
+                .collect::<Vec<_>>(),
+            vec![(1u8, "Page".to_string()), (3u8, "bar ### b".to_string())]
+        );
+        // `#foo#`-style: no space before the hashes, they stay in the text.
+        assert_eq!(headings("# foo#\n\nb\n")[0].1, "foo#".to_string());
     }
 
     #[test]

@@ -61,7 +61,7 @@ md-doc-search <markdown_file> "<keywords>" --max-tokens 800 --top-k 3
 | `max_tokens` / `--max-tokens` | `8000` | output budget (1 token ≈ 4 chars); sections are truncated to fit |
 | `top_k` / `--top-k` | `3` | number of sections returned |
 
-The legacy positional form is kept for existing `SKILL.md` files; flags are recommended for new integrations. Passing the same parameter both ways is an error, and so are non-numeric or zero values — nothing is silently replaced by a default. `--help` and `--version` are available, and `--fold-diacritics` matches accented text through its ASCII base (`é` → `e`) for non-English corpora.
+The legacy positional form is kept for existing `SKILL.md` files; flags are recommended for new integrations. Passing the same parameter both ways is an error, and so are non-numeric, zero, or out-of-range values (a `--max-tokens` too large to fit the budget is rejected with exit 2, not wrapped) — nothing is silently replaced by a default. `--help` and `--version` are available, and `--fold-diacritics` matches accented text through its ASCII base (`é` → `e`) for non-English corpora.
 
 Exit codes follow `grep` conventions, so agents can react programmatically:
 
@@ -225,7 +225,7 @@ python scripts/relevance_check.py   # 39 assertions across all four corpora
 ## Development
 
 ```bash
-cargo test                                          # 40 unit + integration tests
+cargo test                                          # 43 unit + integration tests
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 python scripts/relevance_check.py                   # relevance suite on local corpora (docs/, gitignored)
