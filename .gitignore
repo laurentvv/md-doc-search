@@ -3,3 +3,4 @@
 *.log
 /.zcode/plans/
 __pycache__/
+.agent/*.duckdb.wal
