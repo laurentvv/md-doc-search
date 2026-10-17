@@ -4,3 +4,6 @@
 /.zcode/plans/
 __pycache__/
 .agent/*.duckdb.wal
+# Agent local state (ledger, installed skills) - kept on disk, never committed
+.agent/
+.agents/
