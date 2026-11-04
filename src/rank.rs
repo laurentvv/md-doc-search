@@ -275,11 +275,16 @@ pub fn rank_sections(
     if scored.is_empty() {
         return Ok(Vec::new());
     }
-    let kk = top_k.min(scored.len());
-    scored.select_nth_unstable_by(kk - 1, hit_order);
-    scored[..kk].sort_by(hit_order);
-    Ok(scored[..kk]
+    // Best first, keeping only the first of identical sections (same heading
+    // and same body once normalized): mirrored docs often ship verbatim copies
+    // (man-page aliases such as `rlogin.1` = `ssh.1`, `foo.conf.d` = `foo.conf`)
+    // that would otherwise fill every top-k slot with the same text.
+    scored.sort_by(hit_order);
+    let mut seen: HashSet<(&str, &str)> = HashSet::with_capacity(top_k);
+    Ok(scored
         .iter()
+        .filter(|&&(_, si)| seen.insert((headings[si].as_str(), bodies[si].trim())))
+        .take(top_k)
         .map(|&(score, section_idx)| Hit { score, section_idx })
         .collect())
 }
@@ -376,6 +381,33 @@ mod tests {
         assert_eq!(h.len(), 2);
         assert_eq!(h[0].section_idx, 0);
         assert_eq!(h[1].section_idx, 1);
+    }
+
+    #[test]
+    fn identical_sections_take_one_top_k_slot() {
+        // Three verbatim copies of the same section (man-page aliases) and one
+        // distinct section: the copies must not fill the top-k.
+        let copy = "## OPTIONS\n\nForwardAgent enables forwarding of the agent\n\n";
+        let corpus = format!(
+            "# ssh\n\n{copy}# rlogin\n\n{copy}# slogin\n\n{copy}# ssh_config\n\nForwardAgent yes or no, forward agent\n"
+        );
+        let sections = parse_sections(&corpus);
+        let h = hits(&corpus, "forwardagent", 3);
+        assert_eq!(h.len(), 2);
+        // Page of a hit: its H1 ancestor, or its own heading for an H1 section.
+        let pages: Vec<&str> = h
+            .iter()
+            .map(|hit| {
+                let s = &sections[hit.section_idx];
+                s.breadcrumb.first().unwrap_or(&s.heading).as_str()
+            })
+            .collect();
+        // The first copy (document order) stands for all of them.
+        assert!(pages.contains(&"ssh"));
+        assert!(pages.contains(&"ssh_config"));
+        // Same heading but different body: both kept.
+        let corpus = "# A\n\n## Options\n\nmerge distance\n\n# B\n\n## Options\n\nmerge angle\n";
+        assert_eq!(hits(corpus, "merge", 3).len(), 2);
     }
 
     #[test]
