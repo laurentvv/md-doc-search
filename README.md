@@ -248,7 +248,7 @@ python scripts/relevance_check.py   # 39 assertions across all four corpora
 ## Development
 
 ```bash
-cargo test                                          # 43 unit + integration tests
+cargo test                                          # 51 unit + integration tests
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 python scripts/relevance_check.py                   # relevance suite on local corpora (docs/, gitignored)
