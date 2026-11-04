@@ -86,7 +86,7 @@ md-doc-search docs/haproxy/ "set server maintenance mode" --top-k 2
 ```
 
 ```text
---- DÉBUT DE SECTION (Score: 212) ---
+--- DÉBUT DE SECTION (Score: 63) ---
 # disable server {#9.3-disable-server}
 > Source: https://docs.haproxy.org/3.4/management.html
 > File: management/statistics-and-monitoring/unix-socket-commands/disable-server.md
