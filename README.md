@@ -63,6 +63,8 @@ md-doc-search <markdown_file> "<keywords>" --max-tokens 800 --top-k 3
 
 The legacy positional form is kept for existing `SKILL.md` files; flags are recommended for new integrations. Passing the same parameter both ways is an error, and so are non-numeric, zero, or out-of-range values (a `--max-tokens` too large to fit the budget is rejected with exit 2, not wrapped) — nothing is silently replaced by a default. `--help` and `--version` are available, and `--fold-diacritics` matches accented text through its ASCII base (`é` → `e`) for non-English corpora.
 
+A query that starts with `-` (a CLI flag such as `--deploy-hook`) would be read as an option: put the options first and end them with `--`, e.g. `md-doc-search --top-k 3 -- docs/certbot/ "--deploy-hook reload"`.
+
 Exit codes follow `grep` conventions, so agents can react programmatically:
 
 | Code | Meaning |
