@@ -57,7 +57,7 @@ md-doc-search <markdown_file> "<keywords>" --max-tokens 800 --top-k 3
 | Argument | Default | Description |
 |---|---|---|
 | `markdown_file` | — | path to any Markdown corpus |
-| `keywords` | — | query, as a single argument (spaces allowed, **English keywords** for English docs) |
+| `keywords` | — | query, as a single argument (spaces allowed, **English keywords** for English docs); quotes, brackets and trailing `, ; : ! ? .` around each word are ignored (`"boolean modifier"`, `(merge_threshold)`, `anisotropy?`), name-forming symbols are kept (`Input.is_action_just_pressed`, `C#`, `--force`) |
 | `max_tokens` / `--max-tokens` | `8000` | output budget (1 token ≈ 4 chars); sections are truncated to fit |
 | `top_k` / `--top-k` | `3` | number of sections returned |
 

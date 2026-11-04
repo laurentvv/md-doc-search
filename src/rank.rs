@@ -72,6 +72,20 @@ fn idf_weight(df: usize, n_sections: usize, floor: f64) -> f64 {
         .max(floor)
 }
 
+/// Strip sentence punctuation wrapped around a query keyword: quotes and
+/// brackets on either side, trailing `, ; : ! ? .` and empty call parentheses.
+/// `"boolean`, `anisotropy?` and `(merge_threshold)` become plain words,
+/// which a substring scan would otherwise never find. Inner punctuation and
+/// symbols that are part of a name are kept: `Input.is_action_just_pressed`,
+/// `C#`, `C++`, `--force`, `.NET`, `Vec<T>`.
+pub(crate) fn trim_query_punctuation(word: &str) -> &str {
+    const LEADING: &[char] = &['(', '[', '{', '"', '\'', '«', '“', '‘', '¿', '¡', '`'];
+    const TRAILING: &[char] = &[
+        ')', ']', '}', '(', '[', '{', '"', '\'', '»', '”', '’', '`', ',', ';', ':', '!', '?', '.',
+    ];
+    word.trim_start_matches(LEADING).trim_end_matches(TRAILING)
+}
+
 /// Fold common Latin accents to their ASCII base letter. Input is expected
 /// lowercase; ligatures collapse to their first letter.
 pub(crate) fn fold(s: &str) -> String {
@@ -142,6 +156,7 @@ pub fn rank_sections(
     };
     let mut keywords: Vec<String> = query
         .split_whitespace()
+        .map(trim_query_punctuation)
         .map(normalize)
         .filter(|w| !w.is_empty())
         .collect();
@@ -418,6 +433,54 @@ mod tests {
         let h = hits(corpus, "resource preloader", 2);
         let sections = parse_sections(corpus);
         assert_eq!(sections[h[0].section_idx].heading, "ResourcePreloader");
+    }
+
+    #[test]
+    fn query_punctuation_is_trimmed() {
+        assert_eq!(trim_query_punctuation("anisotropy?"), "anisotropy");
+        assert_eq!(
+            trim_query_punctuation("(merge_threshold)"),
+            "merge_threshold"
+        );
+        assert_eq!(trim_query_punctuation("move_and_slide()"), "move_and_slide");
+        assert_eq!(trim_query_punctuation("\"boolean"), "boolean");
+        assert_eq!(trim_query_punctuation("modifier\","), "modifier");
+        assert_eq!(trim_query_punctuation("«résumé»"), "résumé");
+        // Name-forming symbols survive.
+        assert_eq!(
+            trim_query_punctuation("Input.is_action_just_pressed"),
+            "Input.is_action_just_pressed"
+        );
+        assert_eq!(trim_query_punctuation("C#"), "C#");
+        assert_eq!(trim_query_punctuation("C++"), "C++");
+        assert_eq!(trim_query_punctuation("--force"), "--force");
+        assert_eq!(trim_query_punctuation(".NET"), ".NET");
+        assert_eq!(trim_query_punctuation("Vec<T>"), "Vec<T>");
+        // Pure punctuation vanishes (then dropped as an empty keyword).
+        assert_eq!(trim_query_punctuation("?!"), "");
+    }
+
+    #[test]
+    fn punctuated_query_finds_the_same_section() {
+        let corpus = "# Mirror\n\n**merge_threshold**(distance: float) merges vertices\n\n# Boolean Modifier\n\nthe boolean modifier operates on meshes\n\n# Other\n\nunrelated text\n";
+        let sections = parse_sections(corpus);
+        for (plain, punctuated) in [
+            ("merge_threshold", "(merge_threshold)?"),
+            ("boolean modifier", "\"boolean modifier\""),
+        ] {
+            let a = hits(corpus, plain, 1);
+            let b = hits(corpus, punctuated, 1);
+            assert_eq!(b.len(), 1, "{punctuated} must match");
+            assert_eq!(
+                sections[a[0].section_idx].heading,
+                sections[b[0].section_idx].heading
+            );
+        }
+        // A query made only of punctuation holds no keyword.
+        assert!(matches!(
+            rank_sections(corpus, &sections, "?? !", 1, &RankingParams::default()),
+            Err(SearchError::EmptyQuery)
+        ));
     }
 
     #[test]
