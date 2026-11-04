@@ -17,7 +17,8 @@ const DEFAULT_TOP_K: usize = 3;
 #[derive(Parser)]
 #[command(name = "md-doc-search", version)]
 struct Cli {
-    /// Path to the Markdown corpus to search
+    /// Path to the Markdown corpus to search: a `.md` file, or a directory
+    /// whose `.md` pages are searched together
     corpus: PathBuf,
 
     /// Query keywords, as a single argument (spaces allowed)

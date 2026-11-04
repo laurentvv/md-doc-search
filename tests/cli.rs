@@ -122,3 +122,58 @@ fn version_prints_package_version() {
     assert_eq!(code, 0);
     assert!(stdout.contains(env!("CARGO_PKG_VERSION")));
 }
+
+/// A fresh directory corpus under Cargo's per-target temp dir.
+fn dir_corpus(name: &str, files: &[(&str, &str)]) -> String {
+    let root = Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    for (rel, content) in files {
+        let path = root.join(rel);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+    root.to_string_lossy().into_owned()
+}
+
+#[test]
+fn directory_corpus_cites_pages_and_isolates_them() {
+    let root = dir_corpus(
+        "dir_corpus_pages",
+        &[
+            (
+                "a.md",
+                "---\ntitle: \"Alpha\"\nurl: https://example.org/a.html\n---\n\n# Alpha\n\nthe zebra lives here\n",
+            ),
+            // No heading: must not inherit `# Alpha` from the previous page.
+            ("sub/b.md", "a quokka paragraph without any heading\n"),
+            (".hidden/c.md", "# Hidden\n\nquokka quokka quokka\n"),
+            ("notes.txt", "# Not markdown\n\nquokka\n"),
+        ],
+    );
+
+    let (code, stdout, _stderr) = run(&[&root, "zebra", "--top-k", "1"]);
+    assert_eq!(code, 0);
+    assert!(stdout.contains("# Alpha"));
+    assert!(stdout.contains("> Source: https://example.org/a.html"));
+    assert!(stdout.contains("> File: a.md"));
+    // Front matter is not searchable text.
+    assert!(!stdout.contains("title:"));
+
+    let (code, stdout, _stderr) = run(&[&root, "quokka", "--top-k", "5"]);
+    assert_eq!(code, 0);
+    assert_eq!(stdout.matches("--- DÉBUT DE SECTION").count(), 1);
+    assert!(stdout.contains("> File: sub/b.md"));
+    assert!(!stdout.contains("> Alpha"));
+    assert!(!stdout.contains("Hidden"));
+    assert!(!stdout.contains("Not markdown"));
+}
+
+#[test]
+fn directory_without_markdown_exits_two() {
+    let root = dir_corpus("dir_corpus_empty", &[("readme.txt", "nothing")]);
+    let (code, stdout, stderr) = run(&[&root, "anything"]);
+    assert_eq!(code, 2);
+    assert!(stdout.is_empty());
+    assert!(stderr.contains("no .md file"));
+}

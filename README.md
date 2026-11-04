@@ -56,12 +56,14 @@ md-doc-search <markdown_file> "<keywords>" --max-tokens 800 --top-k 3
 
 | Argument | Default | Description |
 |---|---|---|
-| `markdown_file` | — | path to any Markdown corpus |
+| `markdown_file` | — | path to any Markdown corpus: a single `.md` file, or a directory whose `.md` pages are searched together (see [Directory corpora](#directory-corpora)) |
 | `keywords` | — | query, as a single argument (spaces allowed, **English keywords** for English docs); quotes, brackets and trailing `, ; : ! ? .` around each word are ignored (`"boolean modifier"`, `(merge_threshold)`, `anisotropy?`), name-forming symbols are kept (`Input.is_action_just_pressed`, `C#`, `--force`) |
 | `max_tokens` / `--max-tokens` | `8000` | output budget (1 token ≈ 4 chars); sections are truncated to fit |
 | `top_k` / `--top-k` | `3` | number of sections returned |
 
 The legacy positional form is kept for existing `SKILL.md` files; flags are recommended for new integrations. Passing the same parameter both ways is an error, and so are non-numeric, zero, or out-of-range values (a `--max-tokens` too large to fit the budget is rejected with exit 2, not wrapped) — nothing is silently replaced by a default. `--help` and `--version` are available, and `--fold-diacritics` matches accented text through its ASCII base (`é` → `e`) for non-English corpora.
+
+A query that starts with `-` (a CLI flag such as `--deploy-hook`) would be read as an option: put the options first and end them with `--`, e.g. `md-doc-search --top-k 3 -- docs/certbot/ "--deploy-hook reload"`.
 
 Exit codes follow `grep` conventions, so agents can react programmatically:
 
@@ -69,13 +71,34 @@ Exit codes follow `grep` conventions, so agents can react programmatically:
 |---|---|
 | `0` | at least one section returned |
 | `1` | no section matches the query |
-| `2` | error (unreadable corpus, invalid argument) — details on **stderr** |
+| `2` | error (unreadable corpus, directory without `.md` file, invalid argument) — details on **stderr** |
 
 Try it immediately on the bundled sample:
 
 ```bash
 md-doc-search examples/demo.md "boolean modifier"
 ```
+
+### Directory corpora
+
+Documentation mirrored as one Markdown file per page (a crawler output, a static-site export) can be searched in place, without concatenating it first:
+
+```bash
+md-doc-search docs/haproxy/ "set server maintenance mode" --top-k 2
+```
+
+```text
+--- DÉBUT DE SECTION (Score: 63) ---
+# disable server {#9.3-disable-server}
+> Source: https://docs.haproxy.org/3.4/management.html
+> File: management/statistics-and-monitoring/unix-socket-commands/disable-server.md
+...
+```
+
+- Every `.md` file under the directory is a page (recursive walk; hidden files and folders such as `.git/` are skipped; other extensions are ignored). Pages are read in a deterministic order (relative path).
+- Each page is sliced on its own: a page that starts without a heading never inherits the headings of the previous one. IDF weights are computed over the whole directory.
+- A leading YAML front matter (`---` … `---`) is stripped from the searchable text; its `url:` field, when present, is printed as `> Source: <url>` so the agent can cite the canonical page. `> File:` gives the page path relative to the directory, ready to open for more context.
+- Measured on real mirrors: 0.3-0.7 s for 2-16 MB directories (67 to 2 447 pages) on Windows, file reading included.
 
 ## How ranking works
 
@@ -225,11 +248,14 @@ python scripts/relevance_check.py   # 39 assertions across all four corpora
 ## Development
 
 ```bash
-cargo test                                          # 43 unit + integration tests
+cargo test                                          # 51 unit + integration tests
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 python scripts/relevance_check.py                   # relevance suite on local corpora (docs/, gitignored)
+python scripts/directory_relevance.py --root <doc-en-ligne root>   # directory corpora: hit@k / MRR on 84 queries
 ```
+
+`scripts/directory_relevance.py` measures retrieval on directory corpora with the set in `scripts/relevance/doc-en-ligne.json`: 84 short English queries over 11 mirrored doc sets (Postfix, OpenSSH, fail2ban, Certbot, chrony/logrotate/rsyslog, HAProxy, systemd, nginx, Git, PostgreSQL, Podman), half exact identifiers, half task phrasings, each with its acceptable page(s). The pages were chosen from page names and content before running the tool on them. The corpora are not shipped; the script checks that every expected page exists, then reports hit@1/3/5 and MRR@5 per doc set and per query kind (`--show-misses` lists what came back instead). Baseline at the introduction of directory corpora: hit@1 49/84, hit@3 65/84, hit@5 74/84, MRR@5 0.690, ~100 ms per query. Any ranking change should be judged on this table, not on single queries.
 
 CI runs fmt, clippy, tests and a release build on windows / linux / macos. Publishing a GitHub release (tag `vX.Y.Z`) also attaches prebuilt binaries automatically (`windows-x64`, `linux-x64`, `macos-arm64`, `macos-x64` — see `.github/workflows/release.yml`).
 
