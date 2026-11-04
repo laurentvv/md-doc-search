@@ -56,7 +56,7 @@ md-doc-search <markdown_file> "<keywords>" --max-tokens 800 --top-k 3
 
 | Argument | Default | Description |
 |---|---|---|
-| `markdown_file` | — | path to any Markdown corpus |
+| `markdown_file` | — | path to any Markdown corpus: a single `.md` file, or a directory whose `.md` pages are searched together (see [Directory corpora](#directory-corpora)) |
 | `keywords` | — | query, as a single argument (spaces allowed, **English keywords** for English docs); quotes, brackets and trailing `, ; : ! ? .` around each word are ignored (`"boolean modifier"`, `(merge_threshold)`, `anisotropy?`), name-forming symbols are kept (`Input.is_action_just_pressed`, `C#`, `--force`) |
 | `max_tokens` / `--max-tokens` | `8000` | output budget (1 token ≈ 4 chars); sections are truncated to fit |
 | `top_k` / `--top-k` | `3` | number of sections returned |
@@ -69,13 +69,34 @@ Exit codes follow `grep` conventions, so agents can react programmatically:
 |---|---|
 | `0` | at least one section returned |
 | `1` | no section matches the query |
-| `2` | error (unreadable corpus, invalid argument) — details on **stderr** |
+| `2` | error (unreadable corpus, directory without `.md` file, invalid argument) — details on **stderr** |
 
 Try it immediately on the bundled sample:
 
 ```bash
 md-doc-search examples/demo.md "boolean modifier"
 ```
+
+### Directory corpora
+
+Documentation mirrored as one Markdown file per page (a crawler output, a static-site export) can be searched in place, without concatenating it first:
+
+```bash
+md-doc-search docs/haproxy/ "set server maintenance mode" --top-k 2
+```
+
+```text
+--- DÉBUT DE SECTION (Score: 212) ---
+# disable server {#9.3-disable-server}
+> Source: https://docs.haproxy.org/3.4/management.html
+> File: management/statistics-and-monitoring/unix-socket-commands/disable-server.md
+...
+```
+
+- Every `.md` file under the directory is a page (recursive walk; hidden files and folders such as `.git/` are skipped; other extensions are ignored). Pages are read in a deterministic order (relative path).
+- Each page is sliced on its own: a page that starts without a heading never inherits the headings of the previous one. IDF weights are computed over the whole directory.
+- A leading YAML front matter (`---` … `---`) is stripped from the searchable text; its `url:` field, when present, is printed as `> Source: <url>` so the agent can cite the canonical page. `> File:` gives the page path relative to the directory, ready to open for more context.
+- Measured on real mirrors: 0.3-0.7 s for 2-16 MB directories (67 to 2 447 pages) on Windows, file reading included.
 
 ## How ranking works
 

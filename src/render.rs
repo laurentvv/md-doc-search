@@ -6,6 +6,7 @@
 
 use std::borrow::Cow;
 
+use crate::corpus::source_at;
 use crate::parse::{fence_closer, fence_opener};
 use crate::{Hit, SearchError, SearchOutcome};
 
@@ -65,6 +66,23 @@ fn render_block(outcome: &SearchOutcome, hit: &Hit, budget_chars: usize) -> Stri
     if !section.breadcrumb.is_empty() {
         block.push_str("> ");
         block.push_str(&section.breadcrumb.join(" > "));
+        block.push('\n');
+    }
+    // Directory corpus: cite the page. A bare heading has an empty body range,
+    // so look one byte back (its own heading line) to stay inside its page.
+    let at = if section.range.is_empty() {
+        section.range.start.saturating_sub(1)
+    } else {
+        section.range.start
+    };
+    if let Some(source) = source_at(&outcome.sources, at) {
+        if let Some(url) = &source.url {
+            block.push_str("> Source: ");
+            block.push_str(url);
+            block.push('\n');
+        }
+        block.push_str("> File: ");
+        block.push_str(&source.path);
         block.push('\n');
     }
 
@@ -140,6 +158,7 @@ mod tests {
         SearchOutcome {
             corpus: corpus.to_string(),
             sections,
+            sources: Vec::new(),
             hits,
         }
     }
