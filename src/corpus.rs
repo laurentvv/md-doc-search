@@ -66,10 +66,22 @@ pub fn load(path: &Path) -> Result<Corpus, SearchError> {
     let mut sources = Vec::with_capacity(pages.len());
     for (rel, file) in pages {
         let raw = fs::read_to_string(&file)?;
-        let (url, body) = split_front_matter(&raw);
+        let (fm, body) = split_front_matter(&raw);
         let start = text.len();
+        // Page name: front matter title plus relative path without `.md`
+        // (`docs/git-stash`, `global-section/performance-tuning/maxconn`): a
+        // query naming the page, the command or its section of the docs finds
+        // it. The path also makes the name unique per page.
+        let path = rel.strip_suffix(".md").unwrap_or(&rel);
+        let page = match &fm.title {
+            Some(title) => format!("{title} {path}"),
+            None => path.to_string(),
+        };
+        let page_stem = bare_stem(&rel);
         for mut section in parse_sections(body) {
             section.range = section.range.start + start..section.range.end + start;
+            section.page.clone_from(&page);
+            section.page_stem.clone_from(&page_stem);
             sections.push(section);
         }
         text.push_str(body);
@@ -79,7 +91,7 @@ pub fn load(path: &Path) -> Result<Corpus, SearchError> {
         sources.push(Source {
             range: start..text.len(),
             path: rel,
-            url,
+            url: fm.url,
         });
     }
     Ok(Corpus {
@@ -126,31 +138,57 @@ fn relative(root: &Path, file: &Path) -> String {
         .join("/")
 }
 
+/// Lowercase file stem without `.md` nor a man-page section suffix:
+/// `openssh-client/ssh-keygen.1.en.md` -> `ssh-keygen`, `pm.max_children.md`
+/// -> `pm.max_children`.
+pub(crate) fn bare_stem(rel: &str) -> String {
+    let name = rel.rsplit('/').next().unwrap_or(rel);
+    let mut stem = name.strip_suffix(".md").unwrap_or(name).to_lowercase();
+    if let Some(s) = stem.strip_suffix(".en") {
+        stem = s.to_string();
+    }
+    if let Some((head, tail)) = stem.rsplit_once('.') {
+        if !tail.is_empty() && tail.len() <= 2 && tail.chars().all(|c| c.is_ascii_digit()) {
+            stem = head.to_string();
+        }
+    }
+    stem
+}
+
+/// Fields kept from a page's YAML front matter.
+#[derive(Debug, Default, PartialEq)]
+pub(crate) struct FrontMatter {
+    pub(crate) url: Option<String>,
+    pub(crate) title: Option<String>,
+}
+
 /// Split a leading YAML front matter (`---` ... `---`) off `raw`: returns its
-/// `url:` value (unquoted) and the remaining Markdown. Text without front
-/// matter, or with an unterminated one, is returned whole.
-pub(crate) fn split_front_matter(raw: &str) -> (Option<String>, &str) {
+/// `url:` and `title:` values (unquoted) and the remaining Markdown. Text
+/// without front matter, or with an unterminated one, is returned whole.
+pub(crate) fn split_front_matter(raw: &str) -> (FrontMatter, &str) {
     let content = raw.strip_prefix('\u{feff}').unwrap_or(raw);
     let mut lines = content.split_inclusive('\n');
     if lines.next().map(str::trim_end) != Some("---") {
-        return (None, content);
+        return (FrontMatter::default(), content);
     }
     let mut offset = content.find('\n').map_or(content.len(), |i| i + 1);
-    let mut url = None;
+    let mut fm = FrontMatter::default();
     for line in lines {
         offset += line.len();
         let trimmed = line.trim_end();
         if trimmed == "---" || trimmed == "..." {
-            return (url, &content[offset..]);
+            return (fm, &content[offset..]);
         }
-        if let Some(value) = trimmed.strip_prefix("url:") {
-            let value = value.trim().trim_matches(|c| c == '"' || c == '\'');
-            if !value.is_empty() {
-                url = Some(value.to_string());
+        for (key, slot) in [("url:", &mut fm.url), ("title:", &mut fm.title)] {
+            if let Some(value) = trimmed.strip_prefix(key) {
+                let value = value.trim().trim_matches(|c| c == '"' || c == '\'');
+                if !value.is_empty() {
+                    *slot = Some(value.to_string());
+                }
             }
         }
     }
-    (None, content)
+    (FrontMatter::default(), content)
 }
 
 #[cfg(test)]
@@ -158,29 +196,43 @@ mod tests {
     use super::*;
 
     #[test]
+    fn bare_stem_drops_extension_and_man_section() {
+        assert_eq!(bare_stem("openssh-client/ssh-keygen.1.en.md"), "ssh-keygen");
+        assert_eq!(bare_stem("man/jail.conf.5.md"), "jail.conf");
+        assert_eq!(
+            bare_stem("install.fpm.configuration/pm.max_children.md"),
+            "pm.max_children"
+        );
+        assert_eq!(bare_stem("mod/core/AllowOverride.md"), "allowoverride");
+        assert_eq!(bare_stem("journald.conf.md"), "journald.conf");
+    }
+
+    #[test]
     fn front_matter_is_split_and_url_kept() {
         let raw =
             "---\ntitle: \"Page\"\nurl: https://example.org/page.html\n---\n\n# Page\n\nbody\n";
-        let (url, body) = split_front_matter(raw);
-        assert_eq!(url.as_deref(), Some("https://example.org/page.html"));
+        let (fm, body) = split_front_matter(raw);
+        assert_eq!(fm.url.as_deref(), Some("https://example.org/page.html"));
+        assert_eq!(fm.title.as_deref(), Some("Page"));
         assert_eq!(body, "\n# Page\n\nbody\n");
     }
 
     #[test]
     fn quoted_url_and_crlf_and_bom_are_handled() {
         let raw = "\u{feff}---\r\nurl: 'https://e.org/x'\r\n---\r\n# X\r\n";
-        let (url, body) = split_front_matter(raw);
-        assert_eq!(url.as_deref(), Some("https://e.org/x"));
+        let (fm, body) = split_front_matter(raw);
+        assert_eq!(fm.url.as_deref(), Some("https://e.org/x"));
         assert_eq!(body, "# X\r\n");
     }
 
     #[test]
     fn text_without_or_with_unterminated_front_matter_is_untouched() {
-        assert_eq!(split_front_matter("# Title\n"), (None, "# Title\n"));
+        let none = || FrontMatter::default();
+        assert_eq!(split_front_matter("# Title\n"), (none(), "# Title\n"));
         let unterminated = "---\nurl: https://e.org\n# Title\n";
-        assert_eq!(split_front_matter(unterminated), (None, unterminated));
+        assert_eq!(split_front_matter(unterminated), (none(), unterminated));
         // A thematic break later in the page is not front matter.
-        assert_eq!(split_front_matter("text\n---\n"), (None, "text\n---\n"));
+        assert_eq!(split_front_matter("text\n---\n"), (none(), "text\n---\n"));
     }
 
     #[test]
