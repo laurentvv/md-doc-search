@@ -1,0 +1,402 @@
+{
+ "description": "Final test set for directory corpora (doc sets used by neither doc-en-ligne.json nor the held-out set). Written from page names only, after the ranking features existed but before running any of them on it; run once, for the final report.",
+ "cases": [
+  {
+   "docset": "nagios/md/nagios",
+   "query": "host service dependencies",
+   "kind": "task",
+   "expected": [
+    "core/dependencies.md",
+    "Nagios-Core-Host-and-Service-Dependencies.md"
+   ]
+  },
+  {
+   "docset": "nagios/md/nagios",
+   "query": "scheduled downtime",
+   "kind": "task",
+   "expected": [
+    "core/downtime.md",
+    "Nagios-Core-Scheduled-Downtime.md"
+   ]
+  },
+  {
+   "docset": "nagios/md/nagios",
+   "query": "event handler restart service",
+   "kind": "task",
+   "expected": [
+    "core/eventhandlers.md"
+   ]
+  },
+  {
+   "docset": "nagios/md/nagios",
+   "query": "flapping detection",
+   "kind": "task",
+   "expected": [
+    "core/flapping.md",
+    "Nagios-Core-Detection-and-Handling-of-State-Flapping.md"
+   ]
+  },
+  {
+   "docset": "nagios/md/nagios",
+   "query": "freshness checks passive",
+   "kind": "task",
+   "expected": [
+    "core/freshness.md",
+    "Nagios-Core-Service-and-Host-Freshness-Checks.md"
+   ]
+  },
+  {
+   "docset": "nagios/md/nagios",
+   "query": "$HOSTADDRESS$ macro",
+   "kind": "identifier",
+   "expected": [
+    "core/macros.md",
+    "Nagios-Core-Standard-Macros-in-Nagios.md",
+    "Nagios-Core-Understanding-Macros-and-How-They-Work.md",
+    "core/macrolist.md"
+   ]
+  },
+  {
+   "docset": "nagios/md/nagios",
+   "query": "notification_interval contacts",
+   "kind": "identifier",
+   "expected": [
+    "core/notifications.md",
+    "Nagios-Core-Notifications.md",
+    "core/objectdefinitions.md"
+   ]
+  },
+  {
+   "docset": "nagios/md/nagios",
+   "query": "define service object",
+   "kind": "task",
+   "expected": [
+    "core/objectdefinitions.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "occ maintenance:mode",
+   "kind": "identifier",
+   "expected": [
+    "admin/occ_command.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "redis memcache locking",
+   "kind": "task",
+   "expected": [
+    "admin/configuration_server/caching_configuration.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "background jobs cron",
+   "kind": "task",
+   "expected": [
+    "admin/configuration_server/background_jobs_configuration.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "trusted_domains",
+   "kind": "identifier",
+   "expected": [
+    "admin/configuration_server/config_sample_php_parameters.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "overwriteprotocol reverse proxy",
+   "kind": "identifier",
+   "expected": [
+    "admin/configuration_server/reverse_proxy_configuration.md",
+    "admin/configuration_server/config_sample_php_parameters.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "upload large files",
+   "kind": "task",
+   "expected": [
+    "admin/configuration_files/big_file_upload_configuration.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "two-factor authentication",
+   "kind": "task",
+   "expected": [
+    "admin/configuration_user/two_factor-auth.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "LDAP user backend",
+   "kind": "task",
+   "expected": [
+    "admin/configuration_user/user_auth_ldap.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "backup nextcloud",
+   "kind": "task",
+   "expected": [
+    "admin/maintenance/backup.md"
+   ]
+  },
+  {
+   "docset": "nextcloud/md/nextcloud",
+   "query": "upgrade nextcloud",
+   "kind": "task",
+   "expected": [
+    "admin/maintenance/upgrade.md"
+   ]
+  },
+  {
+   "docset": "phpfpm/md/phpfpm",
+   "query": "pm.max_children",
+   "kind": "identifier",
+   "expected": [
+    "install.fpm.configuration/pm.max_children.md"
+   ]
+  },
+  {
+   "docset": "phpfpm/md/phpfpm",
+   "query": "process manager dynamic ondemand",
+   "kind": "task",
+   "expected": [
+    "install.fpm.configuration/pm.md"
+   ]
+  },
+  {
+   "docset": "phpfpm/md/phpfpm",
+   "query": "slow requests log",
+   "kind": "task",
+   "expected": [
+    "install.fpm.configuration/slowlog.md",
+    "install.fpm.configuration/request_slowlog_timeout.md"
+   ]
+  },
+  {
+   "docset": "phpfpm/md/phpfpm",
+   "query": "listen socket address",
+   "kind": "task",
+   "expected": [
+    "install.fpm.configuration/listen.md"
+   ]
+  },
+  {
+   "docset": "phpfpm/md/phpfpm",
+   "query": "fpm status page",
+   "kind": "task",
+   "expected": [
+    "fpm.status.md",
+    "install.fpm.configuration/pm.status_path.md"
+   ]
+  },
+  {
+   "docset": "phpfpm/md/phpfpm",
+   "query": "pm.max_requests",
+   "kind": "identifier",
+   "expected": [
+    "install.fpm.configuration/pm.max_requests.md"
+   ]
+  },
+  {
+   "docset": "php/md/php",
+   "query": "post_max_size",
+   "kind": "identifier",
+   "expected": [
+    "ini.core/post_max_size.md"
+   ]
+  },
+  {
+   "docset": "php/md/php",
+   "query": "opcache.enable",
+   "kind": "identifier",
+   "expected": [
+    "opcache.configuration/opcache.enable.md"
+   ]
+  },
+  {
+   "docset": "php/md/php",
+   "query": "curl_setopt options",
+   "kind": "identifier",
+   "expected": [
+    "function.curl-setopt.md"
+   ]
+  },
+  {
+   "docset": "php/md/php",
+   "query": "json_encode flags",
+   "kind": "identifier",
+   "expected": [
+    "function.json-encode.md"
+   ]
+  },
+  {
+   "docset": "php/md/php",
+   "query": "cgi.fix_pathinfo",
+   "kind": "identifier",
+   "expected": [
+    "ini.core/cgi.fix_pathinfo.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "vector push",
+   "kind": "task",
+   "expected": [
+    "book/ch08-01-vectors.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "Result error propagation question mark operator",
+   "kind": "task",
+   "expected": [
+    "book/ch09-02-recoverable-errors-with-result.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "define trait implement",
+   "kind": "task",
+   "expected": [
+    "book/ch10-02-traits.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "lifetime annotations",
+   "kind": "task",
+   "expected": [
+    "book/ch10-03-lifetime-syntax.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "spawn threads",
+   "kind": "task",
+   "expected": [
+    "book/ch16-01-threads.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "Rc reference counting",
+   "kind": "identifier",
+   "expected": [
+    "book/ch15-04-rc.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "closures capture environment",
+   "kind": "task",
+   "expected": [
+    "book/ch13-01-closures.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "writing tests",
+   "kind": "task",
+   "expected": [
+    "book/ch11-01-writing-tests.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "cargo features optional dependencies",
+   "kind": "task",
+   "expected": [
+    "cargo/reference/features.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "Cargo.toml manifest",
+   "kind": "identifier",
+   "expected": [
+    "cargo/reference/manifest.md"
+   ]
+  },
+  {
+   "docset": "rust/md/rust",
+   "query": "git dependency path dependency",
+   "kind": "task",
+   "expected": [
+    "cargo/reference/specifying-dependencies.md"
+   ]
+  },
+  {
+   "docset": "glpi/md/glpi",
+   "query": "LDAP authentication setup",
+   "kind": "task",
+   "expected": [
+    "help/authentication/setup_ldap.md",
+    "help/faq/glpi/ldap.md"
+   ]
+  },
+  {
+   "docset": "glpi/md/glpi",
+   "query": "automatic actions cron",
+   "kind": "task",
+   "expected": [
+    "help/faq/glpi/cron_automatic_action.md"
+   ]
+  },
+  {
+   "docset": "glpi/md/glpi",
+   "query": "notifications receivers",
+   "kind": "task",
+   "expected": [
+    "help/faq/glpi/notifications_and_receivers.md"
+   ]
+  },
+  {
+   "docset": "glpi/md/glpi",
+   "query": "mail queue",
+   "kind": "task",
+   "expected": [
+    "help/glpi-12/administration/mailqueue.md"
+   ]
+  },
+  {
+   "docset": "glpi/md/glpi",
+   "query": "console commands list",
+   "kind": "task",
+   "expected": [
+    "help/glpi-12/glpi-command-line-interface-cli/available-commands.md"
+   ]
+  },
+  {
+   "docset": "glpi/md/glpi",
+   "query": "uninstall plugin",
+   "kind": "task",
+   "expected": [
+    "help/faq/plugins/uninstall.md"
+   ]
+  },
+  {
+   "docset": "fedora/md/fedora-server",
+   "query": "dnf snapshot hook",
+   "kind": "task",
+   "expected": [
+    "administration/backup/snapshots-dnf-hook.md"
+   ]
+  },
+  {
+   "docset": "fedora/md/fedora-server",
+   "query": "manage virtual machines cockpit",
+   "kind": "task",
+   "expected": [
+    "virtualization/vm-management-cockpit.md"
+   ]
+  }
+ ]
+}

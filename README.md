@@ -115,6 +115,13 @@ Sections are then scored:
 7. **Occurrence cap (20)** and **length normalization** — giant sections can't win by being giant. Bare headings (a `## Options` with no body) stay indexed — a word existing *only* on such a heading is still found — but their score is scaled (×0.2) so they don't steal a top-k slot from content sections.
 8. **Token budget** — output is capped at `max_tokens` (≈4 chars/token, counted in *characters*, not bytes). Sections get a greedy share of the budget: what short sections leave unused flows to longer ones. Truncation lands on a line boundary and closes a code fence left open by the cut, with an explicit truncation marker (agents can raise the budget and re-query).
 
+Directory corpora add page identity (single-file corpora keep the ranking above unchanged):
+
+9. **Page name** — each page is named by its front matter `title` and its relative path (`docs/git-stash`, `configuration/global-section/performance-tuning/maxconn`); a keyword that is a whole word of the name earns a bonus (+10 × weight), so a query naming the command or the part of the docs finds the right page.
+10. **File stem** — a page whose file stem (without `.md` nor a man-page suffix such as `.1.en`) *is* the query wins a strong bonus (`allowoverride.md` for `AllowOverride`, `timeout-connect.md` for `timeout connect`: +30 × average weight), and a stem equal to one keyword a smaller one (`journalctl.md` for `journalctl since until`: +10 × weight).
+11. **Definition line** — a keyword that starts a body line after list, emphasis or code markup (`**PermitRootLogin**`, `` `ssl_protocols` ``) marks a definition (+5 × weight). These three identity bonuses are added *after* length normalization: a definition buried in a 50 KB man page section still counts.
+12. **At most 2 sections per page** in the results, so one long page cannot fill every slot.
+
 Sort is deterministic (score, then document order). Identical sections (same heading and same body once normalized) take a single top-k slot — the first in document order stands for its copies — so verbatim duplicates shipped by mirrors (man-page aliases such as `rlogin.1` = `ssh.1`, `journald.conf.d` = `journald.conf`) cannot fill every result with the same text.
 
 ## Grounding your AI agent
@@ -248,21 +255,29 @@ python scripts/relevance_check.py   # 39 assertions across all four corpora
 ## Development
 
 ```bash
-cargo test                                          # 52 unit + integration tests
+cargo test                                          # 58 unit + integration tests
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 python scripts/relevance_check.py                   # relevance suite on local corpora (docs/, gitignored)
-python scripts/directory_relevance.py --root <doc-en-ligne root>   # directory corpora: hit@k / MRR on 84 queries
+python scripts/directory_relevance.py --root <doc-en-ligne root>   # directory corpora: hit@k / MRR
 ```
 
-`scripts/directory_relevance.py` measures retrieval on directory corpora with the set in `scripts/relevance/doc-en-ligne.json`: 84 short English queries over 11 mirrored doc sets (Postfix, OpenSSH, fail2ban, Certbot, chrony/logrotate/rsyslog, HAProxy, systemd, nginx, Git, PostgreSQL, Podman), half exact identifiers, half task phrasings, each with its acceptable page(s). The pages were chosen from page names and content before running the tool on them. The corpora are not shipped; the script checks that every expected page exists, then reports hit@1/3/5 and MRR@5 per doc set and per query kind (`--show-misses` lists what came back instead). A returned page also counts when its content (front matter excluded) is identical to an expected page, since a verbatim copy returns the same text. Any ranking change should be judged on this table, not on single queries:
+`scripts/directory_relevance.py` measures retrieval on directory corpora (the corpora are not shipped: pass their root). It checks that every expected page exists, then reports hit@1/3/5 and MRR@5 per doc set and per query kind (`--show-misses` lists what came back instead; `--set` picks the relevance set). A returned page also counts when its content (front matter excluded) is identical to an expected page, since a verbatim copy returns the same text. Queries are short English keywords, half exact identifiers and half task phrasings; expected pages were chosen from page names (and content) before running the tool on them. Three disjoint sets, by doc set:
 
-| Version | hit@1 | hit@3 | hit@5 | MRR@5 |
+| Set | Queries | Doc sets | Role |
+|---|---|---|---|
+| `scripts/relevance/doc-en-ligne.json` | 84 | Postfix, OpenSSH, fail2ban, Certbot, chrony/logrotate/rsyslog, HAProxy, systemd, nginx, Git, PostgreSQL, Podman | tuning |
+| `scripts/relevance/doc-en-ligne-holdout.json` | 69 | Apache httpd, Docker, Ansible, MariaDB, Valkey, nftables, firewalld/SELinux, Python, Bash/coreutils | held-out, then tuning (pooled with the first set) |
+| `scripts/relevance/doc-en-ligne-test.json` | 48 | Nagios, Nextcloud, PHP-FPM, PHP, Rust, GLPI, Fedora Server | final test |
+
+Judge a ranking change on these tables, never on single queries (one query is ~1-2 % of a set: below that, differences are noise).
+
+| Version (hit@1 / hit@3 / hit@5, MRR@5) | tuning (84) | held-out (69) | test (48) | all (201) |
 |---|---|---|---|---|
-| Directory corpora introduced | 50/84 | 65/84 | 74/84 | 0.697 |
-| Identical sections deduplicated | 50/84 | 71/84 | 77/84 | 0.722 |
+| Identical sections deduplicated | 50 / 71 / 77, 0.722 | 45 / 57 / 59, 0.742 | 32 / 43 / 45, 0.781 | 63.2 % / 85.1 % / 90.0 %, 0.743 |
+| Page identity + per-page cap | 62 / 74 / 80, 0.816 | 48 / 60 / 61, 0.772 | 34 / 46 / 47, 0.832 | **71.6 % / 89.6 % / 93.5 %, 0.804** |
 
-(~80 ms per query on Windows.)
+Identifier queries gain the most (hit@1 51 → 68 of 84); task queries keep their hit@1 (76 of 117) and gain at hit@3/5. The test set was first run once with a candidate that also matched plurals through their singular: 30 / 45 / 47 (hit@1 below the 32 baseline, task queries losing). Dropping that one feature, decided on all three sets, gives the row above, so the test figures are not fully blind. About 80 ms per query on Windows.
 
 CI runs fmt, clippy, tests and a release build on windows / linux / macos. Publishing a GitHub release (tag `vX.Y.Z`) also attaches prebuilt binaries automatically (`windows-x64`, `linux-x64`, `macos-arm64`, `macos-x64` — see `.github/workflows/release.yml`).
 
