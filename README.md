@@ -252,7 +252,10 @@ cargo test                                          # 43 unit + integration test
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 python scripts/relevance_check.py                   # relevance suite on local corpora (docs/, gitignored)
+python scripts/directory_relevance.py --root <doc-en-ligne root>   # directory corpora: hit@k / MRR on 84 queries
 ```
+
+`scripts/directory_relevance.py` measures retrieval on directory corpora with the set in `scripts/relevance/doc-en-ligne.json`: 84 short English queries over 11 mirrored doc sets (Postfix, OpenSSH, fail2ban, Certbot, chrony/logrotate/rsyslog, HAProxy, systemd, nginx, Git, PostgreSQL, Podman), half exact identifiers, half task phrasings, each with its acceptable page(s). The pages were chosen from page names and content before running the tool on them. The corpora are not shipped; the script checks that every expected page exists, then reports hit@1/3/5 and MRR@5 per doc set and per query kind (`--show-misses` lists what came back instead). Baseline at the introduction of directory corpora: hit@1 49/84, hit@3 65/84, hit@5 74/84, MRR@5 0.690, ~100 ms per query. Any ranking change should be judged on this table, not on single queries.
 
 CI runs fmt, clippy, tests and a release build on windows / linux / macos. Publishing a GitHub release (tag `vX.Y.Z`) also attaches prebuilt binaries automatically (`windows-x64`, `linux-x64`, `macos-arm64`, `macos-x64` — see `.github/workflows/release.yml`).
 
