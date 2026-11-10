@@ -10,7 +10,7 @@ A small dependency-light Rust binary that answers *precise* technical queries (`
 
 ## The problem it solves
 
-LLM coding agents hallucinate APIs, and web documentation makes it worse: search results blend every version ever published. When your agent writes code against **Blender 5.2** or **Godot 4.7**, it needs *that* version's docs — not a blend of 2022 Stack Overflow answers.
+LLM coding agents hallucinate APIs, and web documentation makes it worse: search results blend every version ever published. When your agent writes code against **Blender 5.3**, **Blender 5.2 LTS** or **Godot 4.7**, it needs *that* version's docs — not a blend of 2022 Stack Overflow answers.
 
 `md-doc-search` turns a documentation snapshot into a deterministic, citation-friendly lookup tool your agent can call from a shell:
 
@@ -29,6 +29,7 @@ Real-world corpora we run daily through this exact binary:
 
 | Corpus | Size | Content | Query time |
 |---|---|---|---|
+| Blender 5.3 manual | 11 MB | full manual, 3 186 referenced screenshots | ~57 ms |
 | Blender 5.2 LTS manual | 10.5 MB | full manual, 3 118 referenced screenshots | ~70 ms |
 | Godot 4.7 stable docs | 10.7 MB | 1 076 class pages + 392 tutorials | ~40 ms |
 | Roblox Creator docs | 22 MB | 2 280 guide pages via official llms.txt | ~95 ms |
@@ -166,18 +167,20 @@ Any Markdown file works as-is. However, raw documentation crawled from the web o
 There are two primary ways to obtain a full documentation snapshot:
 
 #### Method A: Official Offline Exports (e.g. EPUB via Pandoc)
-Projects like Blender publish offline EPUB or HTML archives for each LTS release.
-1. Download the versioned EPUB, e.g. `https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip` (Blender wraps the EPUB in a zip).
+Projects like Blender publish offline EPUB or HTML archives for each release.
+1. Download the versioned EPUB, e.g. `https://docs.blender.org/manual/en/5.3/blender_manual_epub.zip` (Blender wraps the EPUB in a zip).
 2. Convert it into a single consolidated Markdown file with media assets extracted locally using [Pandoc](https://pandoc.org/):
    ```bash
-   pandoc -f epub -t markdown --extract-media=media blender_manual_v5.2_en.epub -o Blender52LTSManual.md
+   pandoc -f epub -t markdown --extract-media=media53 blender_manual_v530_en.epub -o Blender53Manual.md
    ```
-   *Result:* A single ~11 MB Markdown file with all 3,000+ screenshots saved under `media/` for visual AI citations.
+   *Result:* A single ~11 MB Markdown file with all 3,000+ screenshots saved under `media53/` for visual AI citations.
 
 One command does all of it (download, EPUB unwrapping, pandoc conversion, and extraction of every screenshot stored in the EPUB — pandoc alone extracts only AST-referenced media, leaving the raw-HTML `<img>` screenshots dangling):
 ```bash
-python scripts/fetch_docs.py blender --epub https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip
+python scripts/fetch_docs.py blender --epub https://docs.blender.org/manual/en/5.3/blender_manual_epub.zip --out Blender53Manual.md
 ```
+
+`--out` names the corpus file and also versions the downloaded EPUB package and the media directory (Blender stores every version's images at the same EPUB-internal paths — a shared `media/` would let a new release overwrite the previous one's screenshots), so parallel version snapshots like `Blender52LTSManual.md` + `media/` and `Blender53Manual.md` + `media53/` never collide. Every Blender version ships under the same `blender_manual_epub.zip` URL basename; without `--out` the legacy 5.2 layout (`media/`) is kept for compatibility.
 
 #### Method B: AI-Driven Web Crawl via [crawl4ai-mcp-llm](https://github.com/laurentvv/crawl4ai-mcp-llm) — *Recommended for online docs*
 When documentation is only available online (e.g. Godot, Ansible, frameworks):
@@ -223,7 +226,8 @@ Raw web crawls contain broken code fences, navigation boilerplate and unindexed 
 ```bash
 python scripts/fetch_docs.py roblox-docs                                   # fetch via official llms.txt + normalize
 python scripts/fetch_docs.py roblox-engine
-python scripts/fetch_docs.py blender --epub https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip  # download + pandoc + screenshots
+python scripts/fetch_docs.py blender --epub https://docs.blender.org/manual/en/5.3/blender_manual_epub.zip --out Blender53Manual.md  # download + pandoc + screenshots
+python scripts/fetch_docs.py blender --epub https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip  # legacy 5.2 LTS layout (media/)
 python scripts/fetch_docs.py godot                                         # normalize the existing crawled corpus
 python scripts/fetch_docs.py godot --dry-run                               # stats only
 python scripts/fetch_docs.py roblox-docs --input docs/roblox/roblox_docs.md  # normalize without re-fetching

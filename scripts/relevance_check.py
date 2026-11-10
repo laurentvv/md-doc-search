@@ -50,6 +50,12 @@ CASES = [
     ("docs/blender/Blender52LTSManual.md", "integer vector node", "rank1", "Integer Vector Node"),
     ("docs/blender/Blender52LTSManual.md", "weight paint mask", "rank1", "Weight Paint"),
     ("docs/blender/Blender52LTSManual.md", "boolean modifier solver", "rank1", "Solver Options"),
+    # --- Blender 5.3 (regular release, 2026-11-10) ---
+    ("docs/blender/Blender53Manual.md", "Extrude Individual Faces", "rank1", "Extrude Individual Faces"),
+    ("docs/blender/Blender53Manual.md", "integer vector node", "rank1", "Integer Vector Node"),
+    ("docs/blender/Blender53Manual.md", "weight paint mask", "rank1", "Weight Paint"),
+    ("docs/blender/Blender53Manual.md", "boolean modifier solver", "rank1", "Solver Options"),
+    ("docs/blender/Blender53Manual.md", "assets specific versions", "rank1", "Creating Assets for Specific Versions"),
     # --- Roblox API ---
     ("docs/roblox/roblox_engine_api.md", "TeleportService TeleportAsync", "rank1", "TeleportService:TeleportAsync"),
     ("docs/roblox/roblox_engine_api.md", "Players CreateHumanoidModelFromDescription", "rank1", "Players:CreateHumanoidModelFromDescription"),

@@ -35,6 +35,9 @@ Examples:
   python scripts/fetch_docs.py roblox-engine
   python scripts/fetch_docs.py blender --epub \
       https://docs.blender.org/manual/en/5.2/blender_manual_epub.zip  # or a local path
+  python scripts/fetch_docs.py blender --epub \
+      https://docs.blender.org/manual/en/5.3/blender_manual_epub.zip \
+      --out Blender53Manual.md
   python scripts/fetch_docs.py godot            # normalize the existing corpus
   python scripts/fetch_docs.py godot --dry-run  # stats only, write nothing
 """
@@ -402,26 +405,34 @@ def extract_epub_media(epub_path: Path, media_dir: Path):
     print(f"extracted {extracted} media file(s) -> {media_dir}")
 
 
-def fetch_blender(epub: str, out_md: Path):
+def fetch_blender(epub: str, out_md: Path, pkg_name=None, media_name=None):
     """EPUB (URL or local path) -> pandoc -> markdown, media under media/."""
     if not shutil.which("pandoc"):
         sys.exit("abort: pandoc not found in PATH (see README 'Method A')")
     work = out_md.parent
     work.mkdir(parents=True, exist_ok=True)
+    # Every Blender version stores its images at the same EPUB-internal
+    # paths: sharing one media dir would let a new version overwrite the
+    # previous one's screenshots (docs/ is gitignored — unrecoverable).
+    media_dir = work / (media_name or "media")
     if epub.startswith(("http://", "https://")):
         print(f"downloading {epub} ...")
-        pkg = work / (epub.rsplit("/", 1)[-1].split("?")[0] or "manual.epub")
+        # Every Blender version ships as the same blender_manual_epub.zip URL
+        # basename; with --out the package is named after the corpus so
+        # parallel version snapshots never overwrite each other.
+        pkg = work / (pkg_name
+                      or epub.rsplit("/", 1)[-1].split("?")[0] or "manual.epub")
         http_download(epub, pkg)
     else:
         pkg = Path(epub).resolve()
         if not pkg.exists():
             sys.exit(f"abort: EPUB not found: {pkg}")
     epub_path = unwrap_epub(pkg)
-    cmd = ["pandoc", "-f", "epub", "-t", "markdown", "--extract-media=media",
-           str(epub_path), "-o", str(out_md)]
+    cmd = ["pandoc", "-f", "epub", "-t", "markdown",
+           f"--extract-media={media_dir}", str(epub_path), "-o", str(out_md)]
     subprocess.run(cmd, check=True, cwd=work)
-    extract_epub_media(epub_path, work / "media")
-    print(f"pandoc ok -> {out_md} (media under {work / 'media'})")
+    extract_epub_media(epub_path, media_dir)
+    print(f"pandoc ok -> {out_md} (media under {media_dir})")
 
 
 # ---------------------------------------------------------------------- main
@@ -451,6 +462,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("corpus", choices=["roblox-docs", "roblox-engine", "blender", "godot"])
     ap.add_argument("--epub", help="blender only: EPUB URL or local path")
+    ap.add_argument("--out", help="blender only: output markdown filename in "
+                                  "docs/blender/ (e.g. Blender53Manual.md); "
+                                  "the downloaded EPUB package is named after "
+                                  "it so version snapshots never collide")
     ap.add_argument("--input", type=Path, help="normalize-only: source file "
                                                "(default: the repo's copy)")
     ap.add_argument("--dry-run", action="store_true", help="stats only, write nothing")
@@ -468,8 +483,15 @@ def main():
     elif args.corpus == "blender":
         if not args.epub:
             sys.exit("blender requires --epub <url-or-path>")
-        raw = DOCS / "blender" / "Blender52LTSManual.md"
-        fetch_blender(args.epub, raw)
+        raw = DOCS / "blender" / (args.out or "Blender52LTSManual.md")
+        if args.out:  # versioned package + media dir, e.g. Blender53Manual.md
+            version = re.search(r"\d+", Path(args.out).stem)
+            media_name = f"media{version.group(0)}" if version else \
+                f"media_{Path(args.out).stem}"
+        else:
+            media_name = None  # legacy 5.2 layout: blender_manual_epub.zip, media/
+        pkg_name = Path(args.out).stem + ".zip" if args.out else None
+        fetch_blender(args.epub, raw, pkg_name=pkg_name, media_name=media_name)
     else:  # godot: normalize-only
         raw = DOCS / "godot" / "godot_docs_stable_47.md"
 
