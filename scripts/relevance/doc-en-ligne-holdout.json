@@ -1,0 +1,563 @@
+{
+ "description": "Held-out relevance set for directory corpora (doc sets not in doc-en-ligne.json). Written before any ranking tuning, from page names only, and never used to choose a ranking change: it only validates changes chosen on doc-en-ligne.json.",
+ "cases": [
+  {
+   "docset": "apache/md/apache",
+   "query": "AllowOverride",
+   "kind": "identifier",
+   "expected": [
+    "mod/core/allowoverride.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "DocumentRoot",
+   "kind": "identifier",
+   "expected": [
+    "mod/core/documentroot.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "custom 404 error page",
+   "kind": "task",
+   "expected": [
+    "mod/core/errordocument.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "KeepAlive persistent connections",
+   "kind": "identifier",
+   "expected": [
+    "mod/core/keepalive.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "RewriteRule flags",
+   "kind": "identifier",
+   "expected": [
+    "mod/mod_rewrite/rewriterule.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "SSLCertificateFile",
+   "kind": "identifier",
+   "expected": [
+    "mod/mod_ssl/sslcertificatefile.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "reverse proxy to backend server",
+   "kind": "task",
+   "expected": [
+    "mod/mod_proxy/proxypass.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "add HTTP response header",
+   "kind": "task",
+   "expected": [
+    "mod/mod_headers/header.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "name-based virtual hosts",
+   "kind": "task",
+   "expected": [
+    "vhosts/name-based.md"
+   ]
+  },
+  {
+   "docset": "apache/md/apache",
+   "query": "Require all granted",
+   "kind": "identifier",
+   "expected": [
+    "mod/mod_authz_core/require.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "docker run publish port",
+   "kind": "task",
+   "expected": [
+    "reference/cli/docker/container/run.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "follow container logs",
+   "kind": "task",
+   "expected": [
+    "reference/cli/docker/container/logs.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "execute command in running container",
+   "kind": "task",
+   "expected": [
+    "reference/cli/docker/container/exec.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "remove unused data",
+   "kind": "task",
+   "expected": [
+    "reference/cli/docker/system/prune.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "compose depends_on healthcheck",
+   "kind": "identifier",
+   "expected": [
+    "reference/compose-file/services.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "Dockerfile HEALTHCHECK instruction",
+   "kind": "identifier",
+   "expected": [
+    "reference/dockerfile.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "daemon.json log-driver",
+   "kind": "identifier",
+   "expected": [
+    "engine/daemon/logs.md",
+    "engine/daemon.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "install docker engine on fedora",
+   "kind": "task",
+   "expected": [
+    "engine/install/fedora.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "named volumes persist data",
+   "kind": "task",
+   "expected": [
+    "engine/storage/volumes.md"
+   ]
+  },
+  {
+   "docset": "docker/md/docker",
+   "query": "bridge network",
+   "kind": "identifier",
+   "expected": [
+    "engine/network/drivers/bridge.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "lineinfile regexp",
+   "kind": "identifier",
+   "expected": [
+    "collections/ansible/builtin/lineinfile_module.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "copy file to remote host",
+   "kind": "task",
+   "expected": [
+    "collections/ansible/builtin/copy_module.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "jinja2 template module",
+   "kind": "identifier",
+   "expected": [
+    "collections/ansible/builtin/template_module.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "create user account",
+   "kind": "task",
+   "expected": [
+    "collections/ansible/builtin/user_module.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "install package dnf",
+   "kind": "task",
+   "expected": [
+    "collections/ansible/builtin/dnf_module.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "handlers notify restart service",
+   "kind": "task",
+   "expected": [
+    "playbook_guide/playbooks_handlers.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "loop with_items",
+   "kind": "identifier",
+   "expected": [
+    "playbook_guide/playbooks_loops.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "when conditional",
+   "kind": "identifier",
+   "expected": [
+    "playbook_guide/playbooks_conditionals.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "encrypt secrets ansible-vault",
+   "kind": "task",
+   "expected": [
+    "vault_guide/vault_encrypting_content.md",
+    "vault_guide/vault.md",
+    "vault_guide/index.md"
+   ]
+  },
+  {
+   "docset": "ansible/md/ansible",
+   "query": "inventory host groups",
+   "kind": "task",
+   "expected": [
+    "inventory_guide/intro_inventory.md"
+   ]
+  },
+  {
+   "docset": "mariadb/md/mariadb",
+   "query": "mariadb-dump single transaction",
+   "kind": "identifier",
+   "expected": [
+    "mariadb-dump.md"
+   ]
+  },
+  {
+   "docset": "mariadb/md/mariadb",
+   "query": "slow query log",
+   "kind": "task",
+   "expected": [
+    "slow-query-log-overview.md"
+   ]
+  },
+  {
+   "docset": "mariadb/md/mariadb",
+   "query": "CREATE USER",
+   "kind": "identifier",
+   "expected": [
+    "account-management-sql-statements/create-user.md"
+   ]
+  },
+  {
+   "docset": "mariadb/md/mariadb",
+   "query": "GRANT privileges",
+   "kind": "identifier",
+   "expected": [
+    "account-management-sql-statements/grant.md"
+   ]
+  },
+  {
+   "docset": "mariadb/md/mariadb",
+   "query": "innodb_buffer_pool_size",
+   "kind": "identifier",
+   "expected": [
+    "innodb-system-variables.md"
+   ]
+  },
+  {
+   "docset": "mariadb/md/mariadb",
+   "query": "max_connections",
+   "kind": "identifier",
+   "expected": [
+    "server-system-variables.md"
+   ]
+  },
+  {
+   "docset": "mariadb/md/mariadb",
+   "query": "set up primary replica replication",
+   "kind": "task",
+   "expected": [
+    "standard-replication/setting-up-replication.md"
+   ]
+  },
+  {
+   "docset": "mariadb/md/mariadb",
+   "query": "hot physical backup mariadb-backup",
+   "kind": "task",
+   "expected": [
+    "full-backup-and-restore-with-mariadb-backup.md",
+    "mariadb-backup-overview.md",
+    "mariadb-backup-guide.md"
+   ]
+  },
+  {
+   "docset": "valkey/md/valkey",
+   "query": "maxmemory eviction policy",
+   "kind": "identifier",
+   "expected": [
+    "topics/lru-cache.md"
+   ]
+  },
+  {
+   "docset": "valkey/md/valkey",
+   "query": "RDB AOF persistence",
+   "kind": "identifier",
+   "expected": [
+    "topics/persistence.md"
+   ]
+  },
+  {
+   "docset": "valkey/md/valkey",
+   "query": "replica of primary",
+   "kind": "task",
+   "expected": [
+    "topics/replication.md"
+   ]
+  },
+  {
+   "docset": "valkey/md/valkey",
+   "query": "access control list users",
+   "kind": "task",
+   "expected": [
+    "topics/acl.md"
+   ]
+  },
+  {
+   "docset": "valkey/md/valkey",
+   "query": "set key expiration",
+   "kind": "task",
+   "expected": [
+    "commands/expire.md"
+   ]
+  },
+  {
+   "docset": "valkey/md/valkey",
+   "query": "iterate keys without blocking",
+   "kind": "task",
+   "expected": [
+    "commands/scan.md"
+   ]
+  },
+  {
+   "docset": "valkey/md/valkey",
+   "query": "automatic failover sentinel",
+   "kind": "task",
+   "expected": [
+    "topics/sentinel.md"
+   ]
+  },
+  {
+   "docset": "nftables/md/nftables",
+   "query": "accept drop packets",
+   "kind": "task",
+   "expected": [
+    "wiki/Accepting_and_dropping_packets.md"
+   ]
+  },
+  {
+   "docset": "nftables/md/nftables",
+   "query": "connection tracking state established",
+   "kind": "task",
+   "expected": [
+    "wiki/Matching_connection_tracking_stateful_metainformation.md",
+    "wiki/Connection_Tracking_System.md"
+   ]
+  },
+  {
+   "docset": "nftables/md/nftables",
+   "query": "rate limit",
+   "kind": "task",
+   "expected": [
+    "wiki/Limits.md"
+   ]
+  },
+  {
+   "docset": "nftables/md/nftables",
+   "query": "log traffic",
+   "kind": "task",
+   "expected": [
+    "wiki/Logging_traffic.md"
+   ]
+  },
+  {
+   "docset": "nftables/md/nftables",
+   "query": "base chain hook priority",
+   "kind": "identifier",
+   "expected": [
+    "wiki/Configuring_chains.md"
+   ]
+  },
+  {
+   "docset": "nftables/md/nftables",
+   "query": "atomic rule replacement",
+   "kind": "task",
+   "expected": [
+    "wiki/Atomic_rule_replacement.md"
+   ]
+  },
+  {
+   "docset": "security/md/selinux-firewalld",
+   "query": "open a port",
+   "kind": "task",
+   "expected": [
+    "firewalld/documentation/howto/open-a-port-or-service.md"
+   ]
+  },
+  {
+   "docset": "security/md/selinux-firewalld",
+   "query": "rich rule",
+   "kind": "identifier",
+   "expected": [
+    "firewalld/documentation/man-pages/firewalld.richlanguage.md"
+   ]
+  },
+  {
+   "docset": "security/md/selinux-firewalld",
+   "query": "runtime versus permanent configuration",
+   "kind": "task",
+   "expected": [
+    "firewalld/documentation/configuration/runtime-versus-permanent.md"
+   ]
+  },
+  {
+   "docset": "security/md/selinux-firewalld",
+   "query": "SELinux permissive mode",
+   "kind": "task",
+   "expected": [
+    "fedora-quick-docs/selinux-changing-states-and-modes.md"
+   ]
+  },
+  {
+   "docset": "security/md/selinux-firewalld",
+   "query": "SELinux AVC denial troubleshooting",
+   "kind": "task",
+   "expected": [
+    "fedora-quick-docs/selinux-troubleshooting.md"
+   ]
+  },
+  {
+   "docset": "python/md/python",
+   "query": "run external command capture output",
+   "kind": "task",
+   "expected": [
+    "library/subprocess.md"
+   ]
+  },
+  {
+   "docset": "python/md/python",
+   "query": "parse command line arguments",
+   "kind": "task",
+   "expected": [
+    "library/argparse.md"
+   ]
+  },
+  {
+   "docset": "python/md/python",
+   "query": "pathlib glob",
+   "kind": "identifier",
+   "expected": [
+    "library/pathlib.md"
+   ]
+  },
+  {
+   "docset": "python/md/python",
+   "query": "logging basicConfig",
+   "kind": "identifier",
+   "expected": [
+    "library/logging.md"
+   ]
+  },
+  {
+   "docset": "python/md/python",
+   "query": "strftime format codes",
+   "kind": "identifier",
+   "expected": [
+    "library/datetime.md"
+   ]
+  },
+  {
+   "docset": "python/md/python",
+   "query": "regular expression named group",
+   "kind": "task",
+   "expected": [
+    "library/re.md"
+   ]
+  },
+  {
+   "docset": "python/md/python",
+   "query": "create virtual environment",
+   "kind": "task",
+   "expected": [
+    "library/venv.md"
+   ]
+  },
+  {
+   "docset": "gnu/md/gnu",
+   "query": "default value parameter expansion",
+   "kind": "task",
+   "expected": [
+    "bash/Shell-Parameter-Expansion.md"
+   ]
+  },
+  {
+   "docset": "gnu/md/gnu",
+   "query": "test if file exists",
+   "kind": "task",
+   "expected": [
+    "bash/Bash-Conditional-Expressions.md"
+   ]
+  },
+  {
+   "docset": "gnu/md/gnu",
+   "query": "bash arrays",
+   "kind": "identifier",
+   "expected": [
+    "bash/Arrays.md"
+   ]
+  },
+  {
+   "docset": "gnu/md/gnu",
+   "query": "redirect stderr to stdout",
+   "kind": "task",
+   "expected": [
+    "bash/Redirections.md"
+   ]
+  },
+  {
+   "docset": "gnu/md/gnu",
+   "query": "sort numeric reverse",
+   "kind": "task",
+   "expected": [
+    "coreutils/sort-invocation.md"
+   ]
+  },
+  {
+   "docset": "gnu/md/gnu",
+   "query": "date format string",
+   "kind": "task",
+   "expected": [
+    "coreutils/date-invocation.md"
+   ]
+  }
+ ]
+}

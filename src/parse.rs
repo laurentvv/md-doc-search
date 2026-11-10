@@ -38,6 +38,14 @@ pub struct Section {
     /// sections stay indexed so their title text is findable, but ranking
     /// penalizes them (see `RankingParams::empty_body_factor`).
     pub has_body: bool,
+    /// Name of the page the section belongs to in a directory corpus (front
+    /// matter `title` and file stem); empty for a single-file corpus. Ranking
+    /// treats it as page context, like an ancestor heading.
+    pub page: String,
+    /// File stem of the page in a directory corpus, lowercase, without `.md`
+    /// nor a man-page section suffix (`chronyc.1.en.md` -> `chronyc`); empty
+    /// for a single-file corpus.
+    pub page_stem: String,
 }
 
 /// An open fenced code block.
@@ -289,6 +297,8 @@ fn flush(
         heading: heading.to_string(),
         breadcrumb: breadcrumb.to_vec(),
         has_body,
+        page: String::new(),
+        page_stem: String::new(),
     });
 }
 

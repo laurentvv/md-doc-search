@@ -1,0 +1,699 @@
+{
+ "description": "Relevance set for directory corpora: doc-en-ligne mirrors (one Markdown page per file, YAML front matter with url). Queries are short English keywords as an agent writes them; 'expected' lists acceptable pages (path relative to the docset, or a prefix ending with '/' or '-'). Written from page names and page content before running md-doc-search on them.",
+ "cases": [
+  {
+   "docset": "postfix/md/postfix",
+   "query": "relayhost smarthost",
+   "kind": "task",
+   "expected": [
+    "postconf.5.md",
+    "STANDARD_CONFIGURATION_README.md",
+    "BASIC_CONFIGURATION_README.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "message_size_limit",
+   "kind": "identifier",
+   "expected": [
+    "postconf.5.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "smtpd_recipient_restrictions reject_unauth_destination",
+   "kind": "identifier",
+   "expected": [
+    "postconf.5.md",
+    "SMTPD_ACCESS_README.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "SASL authentication Dovecot",
+   "kind": "task",
+   "expected": [
+    "SASL_README.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "smtpd_tls_cert_file",
+   "kind": "identifier",
+   "expected": [
+    "TLS_README.md",
+    "postconf.5.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "deferred mail queue shape by domain",
+   "kind": "task",
+   "expected": [
+    "QSHAPE_README.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "postscreen DNSBL",
+   "kind": "identifier",
+   "expected": [
+    "POSTSCREEN_README.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "virtual mailbox domains",
+   "kind": "task",
+   "expected": [
+    "VIRTUAL_README.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "debug_peer_list verbose logging",
+   "kind": "identifier",
+   "expected": [
+    "DEBUG_README.md",
+    "postconf.5.md"
+   ]
+  },
+  {
+   "docset": "postfix/md/postfix",
+   "query": "maillog_file log to file",
+   "kind": "identifier",
+   "expected": [
+    "MAILLOG_README.md",
+    "postconf.5.md"
+   ]
+  },
+  {
+   "docset": "openssh/md/openssh",
+   "query": "PermitRootLogin",
+   "kind": "identifier",
+   "expected": [
+    "sshd_config.5.en.md"
+   ]
+  },
+  {
+   "docset": "openssh/md/openssh",
+   "query": "disable password authentication",
+   "kind": "task",
+   "expected": [
+    "sshd_config.5.en.md"
+   ]
+  },
+  {
+   "docset": "openssh/md/openssh",
+   "query": "ProxyJump bastion host",
+   "kind": "identifier",
+   "expected": [
+    "ssh_config.5.en.md",
+    "ssh.1.en.md"
+   ]
+  },
+  {
+   "docset": "openssh/md/openssh",
+   "query": "generate ed25519 key",
+   "kind": "task",
+   "expected": [
+    "ssh-keygen.1.en.md"
+   ]
+  },
+  {
+   "docset": "openssh/md/openssh",
+   "query": "authorized_keys restrict command option",
+   "kind": "identifier",
+   "expected": [
+    "authorized_keys.5.en.md",
+    "sshd.8.en.md"
+   ]
+  },
+  {
+   "docset": "openssh/md/openssh",
+   "query": "ChrootDirectory internal-sftp",
+   "kind": "identifier",
+   "expected": [
+    "sshd_config.5.en.md"
+   ]
+  },
+  {
+   "docset": "openssh/md/openssh",
+   "query": "ForwardAgent",
+   "kind": "identifier",
+   "expected": [
+    "ssh_config.5.en.md"
+   ]
+  },
+  {
+   "docset": "openssh/md/openssh",
+   "query": "copy public key to remote server",
+   "kind": "task",
+   "expected": [
+    "ssh-copy-id.1.en.md"
+   ]
+  },
+  {
+   "docset": "fail2ban/md/fail2ban",
+   "query": "bantime findtime maxretry",
+   "kind": "identifier",
+   "expected": [
+    "man/jail.conf.5.md"
+   ]
+  },
+  {
+   "docset": "fail2ban/md/fail2ban",
+   "query": "unban ip address",
+   "kind": "task",
+   "expected": [
+    "man/fail2ban-client.1.md"
+   ]
+  },
+  {
+   "docset": "fail2ban/md/fail2ban",
+   "query": "test filter regex against log file",
+   "kind": "task",
+   "expected": [
+    "man/fail2ban-regex.1.md",
+    "wiki/developing-regex-in-fail2ban.md"
+   ]
+  },
+  {
+   "docset": "fail2ban/md/fail2ban",
+   "query": "docker DOCKER-USER chain",
+   "kind": "identifier",
+   "expected": [
+    "wiki/fail2ban-and-docker.md"
+   ]
+  },
+  {
+   "docset": "fail2ban/md/fail2ban",
+   "query": "jail.local override configuration",
+   "kind": "task",
+   "expected": [
+    "wiki/proper-fail2ban-configuration.md",
+    "man/jail.conf.5.md"
+   ]
+  },
+  {
+   "docset": "certbot/md/certbot",
+   "query": "renew certificates automatically",
+   "kind": "task",
+   "expected": [
+    "using.md"
+   ]
+  },
+  {
+   "docset": "certbot/md/certbot",
+   "query": "webroot plugin",
+   "kind": "identifier",
+   "expected": [
+    "using.md"
+   ]
+  },
+  {
+   "docset": "certbot/md/certbot",
+   "query": "DNS-01 challenge wildcard certificate",
+   "kind": "task",
+   "expected": [
+    "challenges.md",
+    "using.md"
+   ]
+  },
+  {
+   "docset": "certbot/md/certbot",
+   "query": "--deploy-hook reload",
+   "kind": "identifier",
+   "expected": [
+    "using.md",
+    "man/certbot.md"
+   ]
+  },
+  {
+   "docset": "certbot/md/certbot",
+   "query": "revoke certificate",
+   "kind": "task",
+   "expected": [
+    "using.md",
+    "man/certbot.md"
+   ]
+  },
+  {
+   "docset": "syslogtime/md/logs-time",
+   "query": "chrony makestep",
+   "kind": "identifier",
+   "expected": [
+    "man/chrony/chrony.conf.5.en.md"
+   ]
+  },
+  {
+   "docset": "syslogtime/md/logs-time",
+   "query": "chronyc tracking sources",
+   "kind": "identifier",
+   "expected": [
+    "man/chrony/chronyc.1.en.md"
+   ]
+  },
+  {
+   "docset": "syslogtime/md/logs-time",
+   "query": "logrotate compress delaycompress weekly",
+   "kind": "identifier",
+   "expected": [
+    "man/logrotate/logrotate.conf.5.en.md",
+    "man/logrotate/logrotate.8.en.md"
+   ]
+  },
+  {
+   "docset": "syslogtime/md/logs-time",
+   "query": "copytruncate",
+   "kind": "identifier",
+   "expected": [
+    "man/logrotate/logrotate.conf.5.en.md",
+    "man/logrotate/logrotate.8.en.md"
+   ]
+  },
+  {
+   "docset": "syslogtime/md/logs-time",
+   "query": "forward logs to remote server TCP",
+   "kind": "task",
+   "expected": [
+    "rsyslog/getting_started/forwarding_logs.md",
+    "rsyslog/configuration/modules/omfwd.md",
+    "rsyslog/configuration/modules/omfwd/"
+   ]
+  },
+  {
+   "docset": "syslogtime/md/logs-time",
+   "query": "monitor text log file imfile",
+   "kind": "identifier",
+   "expected": [
+    "rsyslog/configuration/modules/imfile.md",
+    "rsyslog/reference/parameters/imfile-"
+   ]
+  },
+  {
+   "docset": "syslogtime/md/logs-time",
+   "query": "template custom log format",
+   "kind": "task",
+   "expected": [
+    "rsyslog/configuration/templates.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "timeout connect",
+   "kind": "identifier",
+   "expected": [
+    "configuration/proxies/alphabetically-sorted-keywords-reference/timeout-connect.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "load balancing algorithm roundrobin leastconn",
+   "kind": "task",
+   "expected": [
+    "configuration/proxies/alphabetically-sorted-keywords-reference/balance.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "HTTP health check option httpchk",
+   "kind": "identifier",
+   "expected": [
+    "configuration/proxies/alphabetically-sorted-keywords-reference/option-httpchk.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "X-Forwarded-For client IP header",
+   "kind": "task",
+   "expected": [
+    "configuration/proxies/alphabetically-sorted-keywords-reference/option-forwardfor.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "custom error page 503",
+   "kind": "task",
+   "expected": [
+    "configuration/proxies/alphabetically-sorted-keywords-reference/errorfile.md",
+    "configuration/proxies/alphabetically-sorted-keywords-reference/errorfiles.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "redirect http to https",
+   "kind": "task",
+   "expected": [
+    "configuration/proxies/alphabetically-sorted-actions-reference/redirect.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "put server in maintenance runtime socket",
+   "kind": "task",
+   "expected": [
+    "unix-socket-commands/set-server.md",
+    "unix-socket-commands/disable-server.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "show stat CSV statistics",
+   "kind": "identifier",
+   "expected": [
+    "unix-socket-commands/show-stat.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "global maxconn",
+   "kind": "identifier",
+   "expected": [
+    "configuration/global-section/performance-tuning/maxconn.md"
+   ]
+  },
+  {
+   "docset": "haproxy/md/haproxy",
+   "query": "ssl-default-bind-ciphers",
+   "kind": "identifier",
+   "expected": [
+    "process-management-and-security/ssl-default-bind-ciphers.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "OnCalendar daily timer",
+   "kind": "identifier",
+   "expected": [
+    "systemd.timer.md",
+    "systemd.time.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "calendar event syntax",
+   "kind": "task",
+   "expected": [
+    "systemd.time.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "Restart=on-failure RestartSec",
+   "kind": "identifier",
+   "expected": [
+    "systemd.service.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "journal disk usage SystemMaxUse",
+   "kind": "identifier",
+   "expected": [
+    "journald.conf.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "journalctl since until unit",
+   "kind": "identifier",
+   "expected": [
+    "journalctl.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "Environment EnvironmentFile",
+   "kind": "identifier",
+   "expected": [
+    "systemd.exec.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "boot time blame critical-chain",
+   "kind": "task",
+   "expected": [
+    "systemd-analyze.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "DNSOverTLS DNS server",
+   "kind": "identifier",
+   "expected": [
+    "resolved.conf.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "create temporary files at boot",
+   "kind": "task",
+   "expected": [
+    "tmpfiles.d.md"
+   ]
+  },
+  {
+   "docset": "systemd/md/systemd",
+   "query": "After Wants Requires dependencies",
+   "kind": "identifier",
+   "expected": [
+    "systemd.unit.md"
+   ]
+  },
+  {
+   "docset": "nginx/md/nginx",
+   "query": "proxy_pass",
+   "kind": "identifier",
+   "expected": [
+    "http/ngx_http_proxy_module.md"
+   ]
+  },
+  {
+   "docset": "nginx/md/nginx",
+   "query": "client_max_body_size",
+   "kind": "identifier",
+   "expected": [
+    "http/ngx_http_core_module.md"
+   ]
+  },
+  {
+   "docset": "nginx/md/nginx",
+   "query": "rate limiting requests per second",
+   "kind": "task",
+   "expected": [
+    "http/ngx_http_limit_req_module.md"
+   ]
+  },
+  {
+   "docset": "nginx/md/nginx",
+   "query": "basic authentication htpasswd",
+   "kind": "task",
+   "expected": [
+    "http/ngx_http_auth_basic_module.md"
+   ]
+  },
+  {
+   "docset": "nginx/md/nginx",
+   "query": "gzip compression",
+   "kind": "task",
+   "expected": [
+    "http/ngx_http_gzip_module.md"
+   ]
+  },
+  {
+   "docset": "nginx/md/nginx",
+   "query": "upstream least_conn",
+   "kind": "identifier",
+   "expected": [
+    "http/ngx_http_upstream_module.md"
+   ]
+  },
+  {
+   "docset": "nginx/md/nginx",
+   "query": "ssl_protocols ssl_ciphers",
+   "kind": "identifier",
+   "expected": [
+    "http/ngx_http_ssl_module.md"
+   ]
+  },
+  {
+   "docset": "nginx/md/nginx",
+   "query": "rewrite return 301",
+   "kind": "identifier",
+   "expected": [
+    "http/ngx_http_rewrite_module.md"
+   ]
+  },
+  {
+   "docset": "git-scm/md/git",
+   "query": "stash uncommitted changes",
+   "kind": "task",
+   "expected": [
+    "docs/git-stash.md"
+   ]
+  },
+  {
+   "docset": "git-scm/md/git",
+   "query": "apply commit from another branch",
+   "kind": "task",
+   "expected": [
+    "docs/git-cherry-pick.md"
+   ]
+  },
+  {
+   "docset": "git-scm/md/git",
+   "query": "find commit that introduced a bug binary search",
+   "kind": "task",
+   "expected": [
+    "docs/git-bisect.md"
+   ]
+  },
+  {
+   "docset": "git-scm/md/git",
+   "query": "recover lost commit reflog",
+   "kind": "task",
+   "expected": [
+    "docs/git-reflog.md"
+   ]
+  },
+  {
+   "docset": "git-scm/md/git",
+   "query": "interactive rebase squash commits",
+   "kind": "task",
+   "expected": [
+    "docs/git-rebase.md"
+   ]
+  },
+  {
+   "docset": "git-scm/md/git",
+   "query": "multiple working trees",
+   "kind": "task",
+   "expected": [
+    "docs/git-worktree.md"
+   ]
+  },
+  {
+   "docset": "git-scm/md/git",
+   "query": "ignore files pattern",
+   "kind": "task",
+   "expected": [
+    "docs/gitignore.md"
+   ]
+  },
+  {
+   "docset": "git-scm/md/git",
+   "query": "remove untracked files",
+   "kind": "task",
+   "expected": [
+    "docs/git-clean.md"
+   ]
+  },
+  {
+   "docset": "postgresql/md/postgresql",
+   "query": "pg_dump custom format",
+   "kind": "identifier",
+   "expected": [
+    "app-pgdump.md"
+   ]
+  },
+  {
+   "docset": "postgresql/md/postgresql",
+   "query": "pg_hba.conf scram-sha-256",
+   "kind": "identifier",
+   "expected": [
+    "auth-pg-hba-conf.md"
+   ]
+  },
+  {
+   "docset": "postgresql/md/postgresql",
+   "query": "autovacuum dead tuples",
+   "kind": "task",
+   "expected": [
+    "routine-vacuuming.md"
+   ]
+  },
+  {
+   "docset": "postgresql/md/postgresql",
+   "query": "log_min_duration_statement slow queries",
+   "kind": "identifier",
+   "expected": [
+    "runtime-config-logging.md"
+   ]
+  },
+  {
+   "docset": "postgresql/md/postgresql",
+   "query": "create index concurrently",
+   "kind": "identifier",
+   "expected": [
+    "sql-createindex.md"
+   ]
+  },
+  {
+   "docset": "postgresql/md/postgresql",
+   "query": "point-in-time recovery WAL archiving",
+   "kind": "task",
+   "expected": [
+    "continuous-archiving.md"
+   ]
+  },
+  {
+   "docset": "postgresql/md/postgresql",
+   "query": "shared_buffers work_mem",
+   "kind": "identifier",
+   "expected": [
+    "runtime-config-resource.md"
+   ]
+  },
+  {
+   "docset": "postgresql/md/postgresql",
+   "query": "grant select on all tables",
+   "kind": "task",
+   "expected": [
+    "sql-grant.md"
+   ]
+  },
+  {
+   "docset": "podman/md/podman",
+   "query": "quadlet container unit",
+   "kind": "identifier",
+   "expected": [
+    "podman/podman-systemd.unit.5.en.md"
+   ]
+  },
+  {
+   "docset": "podman/md/podman",
+   "query": "generate systemd service from container",
+   "kind": "task",
+   "expected": [
+    "podman/podman-generate-systemd.1.en.md",
+    "podman/podman-systemd.unit.5.en.md"
+   ]
+  },
+  {
+   "docset": "podman/md/podman",
+   "query": "remove unused images containers volumes",
+   "kind": "task",
+   "expected": [
+    "podman/podman-system-prune.1.en.md"
+   ]
+  },
+  {
+   "docset": "podman/md/podman",
+   "query": "run command inside running container",
+   "kind": "task",
+   "expected": [
+    "podman/podman-exec.1.en.md"
+   ]
+  },
+  {
+   "docset": "podman/md/podman",
+   "query": "pod create share network",
+   "kind": "task",
+   "expected": [
+    "podman/podman-pod-create.1.en.md"
+   ]
+  }
+ ]
+}
