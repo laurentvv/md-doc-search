@@ -12,7 +12,7 @@ use std::ops::Range;
 use std::path::{Path, PathBuf};
 
 use crate::SearchError;
-use crate::parse::{Section, parse_sections};
+use crate::parse::{DEFAULT_MAX_LEVEL, Section, parse_sections_with};
 
 /// One page of a directory corpus.
 #[derive(Debug, Clone)]
@@ -43,9 +43,23 @@ pub struct Corpus {
 /// [`SearchError::Io`] when a file or directory cannot be read,
 /// [`SearchError::NoMarkdown`] when a directory holds no `.md` file.
 pub fn load(path: &Path) -> Result<Corpus, SearchError> {
+    load_with(path, DEFAULT_MAX_LEVEL)
+}
+
+/// Like [`load`], with headings up to level `max_level` starting a section.
+///
+/// A single file that opens with a YAML front matter has it stripped, like a
+/// directory page: its `# comment` lines and `key: value` + `---` pairs must
+/// not become headings.
+///
+/// # Errors
+///
+/// Same as [`load`].
+pub fn load_with(path: &Path, max_level: u8) -> Result<Corpus, SearchError> {
     if !path.is_dir() {
-        let text = fs::read_to_string(path)?;
-        let sections = parse_sections(&text);
+        let raw = fs::read_to_string(path)?;
+        let text = split_front_matter(&raw).1.to_string();
+        let sections = parse_sections_with(&text, max_level);
         return Ok(Corpus {
             text,
             sections,
@@ -78,7 +92,7 @@ pub fn load(path: &Path) -> Result<Corpus, SearchError> {
             None => path.to_string(),
         };
         let page_stem = bare_stem(&rel);
-        for mut section in parse_sections(body) {
+        for mut section in parse_sections_with(body, max_level) {
             section.range = section.range.start + start..section.range.end + start;
             section.page.clone_from(&page);
             section.page_stem.clone_from(&page_stem);
@@ -215,6 +229,32 @@ mod tests {
         assert_eq!(fm.url.as_deref(), Some("https://example.org/page.html"));
         assert_eq!(fm.title.as_deref(), Some("Page"));
         assert_eq!(body, "\n# Page\n\nbody\n");
+    }
+
+    #[test]
+    fn single_file_front_matter_is_not_indexed_as_headings() {
+        let dir = std::env::temp_dir().join(format!("mds-fm-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("one.md");
+        fs::write(
+            &file,
+            "---
+title: T
+# yaml comment
+tags: a
+---
+
+# Real
+
+body
+",
+        )
+        .unwrap();
+        let c = load(&file).unwrap();
+        fs::remove_dir_all(&dir).unwrap();
+        let heads: Vec<&str> = c.sections.iter().map(|s| s.heading.as_str()).collect();
+        assert_eq!(heads, ["Real"]);
+        assert!(!c.text.contains("yaml comment"));
     }
 
     #[test]

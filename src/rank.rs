@@ -57,6 +57,10 @@ pub struct RankingParams {
     /// Fold accented characters (`é` -> `e`) before matching, for non-English
     /// corpora.
     pub fold_diacritics: bool,
+    /// Deepest heading level that starts a section (1-6): the corpus is
+    /// sliced with it before ranking. Deeper headings stay in the body of
+    /// their parent section.
+    pub max_heading_level: u8,
 }
 
 impl Default for RankingParams {
@@ -78,6 +82,7 @@ impl Default for RankingParams {
             definition_bonus: 5.0,
             max_sections_per_page: 2,
             fold_diacritics: false,
+            max_heading_level: crate::parse::DEFAULT_MAX_LEVEL,
         }
     }
 }
