@@ -106,7 +106,7 @@ pub fn search_markdown(
     if top_k == 0 {
         return Err(SearchError::InvalidParam("top_k"));
     }
-    let loaded = corpus::load(corpus_path)?;
+    let loaded = corpus::load_with(corpus_path, params.max_heading_level)?;
     let hits = rank::rank_sections(&loaded.text, &loaded.sections, query, top_k, params)?;
     Ok(SearchOutcome {
         corpus: loaded.text,

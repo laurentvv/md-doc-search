@@ -10,9 +10,13 @@
 //!   the opening one;
 //! - headings may be indented by 0-3 spaces; deeper indentation is code and
 //!   never a heading;
-//! - Setext underlines (`Title` followed by `====` or `----`) start a section,
-//!   but a `---` that follows a blank line stays a thematic break;
-//! - `####` and deeper do not split sections;
+//! - Setext underlines (`Title` followed by `====` or `----`) start a section
+//!   only under a one-line paragraph: a `---` that follows a blank line stays a
+//!   thematic break, and so does one glued under several text lines (crawled
+//!   API pages use it as a separator after a method description, where it
+//!   would otherwise turn the whole text block into a giant heading);
+//! - headings deeper than `max_level` (3 by default, up to 6) do not split
+//!   sections;
 //! - the text before the first heading is indexed as a preamble section
 //!   (level 0) instead of being dropped;
 //! - sections whose body is empty (a bare heading like `## Options`) stay in
@@ -22,13 +26,18 @@
 
 use std::ops::Range;
 
+/// Deepest heading level that starts a section by default (`###`).
+pub const DEFAULT_MAX_LEVEL: u8 = 3;
+/// Deepest heading level Markdown allows (`######`).
+pub const MAX_LEVEL_LIMIT: u8 = 6;
+
 /// One searchable slice of the corpus.
 #[derive(Debug, Clone)]
 pub struct Section {
     /// Byte range of the section body in the corpus (heading line excluded).
     pub range: Range<usize>,
     /// Heading level: 0 for the preamble (text before the first heading),
-    /// 1-3 otherwise.
+    /// 1 to the configured maximum otherwise.
     pub level: u8,
     /// Own heading text without the leading `#`s (empty for the preamble).
     pub heading: String,
@@ -90,8 +99,8 @@ fn strip_up_to_3_spaces(line: &str) -> Option<&str> {
     (line.len() - stripped.len() < 4).then_some(stripped)
 }
 
-/// ATX heading `(level, text)` of `line`, levels 1-3 only.
-fn atx_heading(line: &str) -> Option<(u8, &str)> {
+/// ATX heading `(level, text)` of `line`, levels 1 to `max_level` only.
+fn atx_heading(line: &str, max_level: u8) -> Option<(u8, &str)> {
     let rest = strip_up_to_3_spaces(line)?;
     let mut level = 0u8;
     for &b in rest.as_bytes() {
@@ -101,7 +110,7 @@ fn atx_heading(line: &str) -> Option<(u8, &str)> {
             break;
         }
     }
-    if level == 0 || level > 3 {
+    if level == 0 || level > max_level {
         return None;
     }
     let after = &rest[usize::from(level)..];
@@ -147,9 +156,17 @@ fn setext_underline(line: &str) -> Option<u8> {
         .then_some(if ch == b'=' { 1 } else { 2 })
 }
 
-/// Split `content` into sections, in document order.
+/// Split `content` into sections, in document order, on `#`..`###` headings.
 #[must_use]
 pub fn parse_sections(content: &str) -> Vec<Section> {
+    parse_sections_with(content, DEFAULT_MAX_LEVEL)
+}
+
+/// Like [`parse_sections`], with headings up to level `max_level` (clamped to
+/// 1..=6) starting a section; deeper ones stay in their parent's body.
+#[must_use]
+pub fn parse_sections_with(content: &str, max_level: u8) -> Vec<Section> {
+    let max_level = max_level.clamp(1, MAX_LEVEL_LIMIT);
     let mut sections = Vec::new();
     // Open headings, current section on top: (level, title).
     let mut stack: Vec<(u8, String)> = Vec::new();
@@ -163,6 +180,7 @@ pub fn parse_sections(content: &str) -> Vec<Section> {
     // Pending paragraph, kept to detect Setext underlines.
     let mut para_start: Option<usize> = None;
     let mut para_text = String::new();
+    let mut para_lines = 0usize;
 
     let mut offset = 0usize;
     for line in content.split_inclusive('\n') {
@@ -181,7 +199,7 @@ pub fn parse_sections(content: &str) -> Vec<Section> {
             continue; // the fence line itself is body
         }
 
-        if let Some((lvl, text)) = atx_heading(line) {
+        if let Some((lvl, text)) = atx_heading(line, max_level) {
             flush(
                 &mut sections,
                 content,
@@ -201,7 +219,8 @@ pub fn parse_sections(content: &str) -> Vec<Section> {
         }
 
         if let Some(lvl) = setext_underline(line) {
-            if let Some(ps) = para_start {
+            // Only a one-line paragraph can be a Setext heading in a crawled corpus.
+            if let Some(ps) = para_start.filter(|_| para_lines == 1) {
                 // The pending paragraph becomes the heading of a new section;
                 // the current section body ends where that paragraph started.
                 flush(
@@ -238,8 +257,10 @@ pub fn parse_sections(content: &str) -> Vec<Section> {
         let text = line.trim();
         if para_start.is_none() && indent < 4 {
             para_start = Some(line_start);
+            para_lines = 1;
             para_text = text.to_string();
         } else if para_start.is_some() {
+            para_lines += 1;
             para_text.push(' ');
             para_text.push_str(text);
         }
@@ -419,6 +440,64 @@ mod tests {
         );
         // `#foo#`-style: no space before the hashes, they stay in the text.
         assert_eq!(headings("# foo#\n\nb\n")[0].1, "foo#".to_string());
+    }
+
+    #[test]
+    fn setext_underline_under_a_multi_line_block_is_a_separator() {
+        // Crawled API pages glue `---` right under the last description line.
+        let content = "# Class
+
+void **a**() 
+Sets a.
+void **b**() 
+Sets b.
+---
+
+### next
+
+x
+";
+        let hs = headings(content);
+        assert_eq!(
+            hs.iter().map(|h| h.1.as_str()).collect::<Vec<_>>(),
+            ["Class", "next"]
+        );
+        assert!(bodies(content)[0].contains("Sets b."));
+    }
+
+    #[test]
+    fn max_level_makes_deeper_headings_split() {
+        let content = "# P
+
+#### Deep
+
+d body
+
+###### Deepest
+
+x
+";
+        let secs = parse_sections_with(content, 6);
+        assert_eq!(
+            secs.iter()
+                .map(|s| (s.level, s.heading.as_str()))
+                .collect::<Vec<_>>(),
+            [(1, "P"), (4, "Deep"), (6, "Deepest")]
+        );
+        assert_eq!(secs[2].breadcrumb, ["P", "Deep"]);
+        // 7+ hashes are never a heading; out-of-range levels are clamped.
+        assert_eq!(
+            parse_sections_with(
+                "####### x
+",
+                9
+            )
+            .len(),
+            1
+        );
+        assert_eq!(parse_sections_with(content, 0).len(), 1);
+        // Default behaviour is unchanged.
+        assert_eq!(parse_sections(content).len(), 1);
     }
 
     #[test]

@@ -62,7 +62,7 @@ md-doc-search <markdown_file> "<keywords>" --max-tokens 800 --top-k 3
 | `max_tokens` / `--max-tokens` | `8000` | output budget (1 token ≈ 4 chars); sections are truncated to fit |
 | `top_k` / `--top-k` | `3` | number of sections returned |
 
-The legacy positional form is kept for existing `SKILL.md` files; flags are recommended for new integrations. Passing the same parameter both ways is an error, and so are non-numeric, zero, or out-of-range values (a `--max-tokens` too large to fit the budget is rejected with exit 2, not wrapped) — nothing is silently replaced by a default. `--help` and `--version` are available, and `--fold-diacritics` matches accented text through its ASCII base (`é` → `e`) for non-English corpora.
+The legacy positional form is kept for existing `SKILL.md` files; flags are recommended for new integrations. Passing the same parameter both ways is an error, and so are non-numeric, zero, or out-of-range values (a `--max-tokens` too large to fit the budget is rejected with exit 2, not wrapped) — nothing is silently replaced by a default. `--max-level <1-6>` sets the deepest heading level that starts a section (default 3), `--help` and `--version` are available, and `--fold-diacritics` matches accented text through its ASCII base (`é` → `e`) for non-English corpora.
 
 A query that starts with `-` (a CLI flag such as `--deploy-hook`) would be read as an option: put the options first and end them with `--`, e.g. `md-doc-search --top-k 3 -- docs/certbot/ "--deploy-hook reload"`.
 
@@ -103,7 +103,7 @@ md-doc-search docs/haproxy/ "set server maintenance mode" --top-k 2
 
 ## How ranking works
 
-The corpus is split by a CommonMark-aware line scanner: `#`/`##`/`###` ATX headings **and** Setext underlines (`Title` + `====`/`----`) start a section; fenced code blocks (```` ``` ````/`~~~`) never emit headings, so a `# comment` inside a Python or Bash block stays body text; the text before the first heading is indexed too; `####` and deeper do **not** split sections. Each section remembers its heading ancestry — a `### Solver` section under `## Options` inherits the `# Boolean Modifier` page context.
+The corpus is split by a CommonMark-aware line scanner: `#`/`##`/`###` ATX headings **and** Setext underlines (`Title` + `====`/`----`, under a one-line paragraph) start a section; fenced code blocks (```` ``` ````/`~~~`) never emit headings, so a `# comment` inside a Python or Bash block stays body text; the text before the first heading is indexed too; a leading YAML front matter in a single-file corpus is stripped, like in directory pages; `####` and deeper do **not** split sections by default (`--max-level 4`…`6` makes them sections of their own: a `#### Cursor Drag` step inside a long `### Move` section is then returned directly). Each section remembers its heading ancestry — a `### Solver` section under `## Options` inherits the `# Boolean Modifier` page context.
 
 Sections are then scored:
 
@@ -254,12 +254,12 @@ python scripts/relevance_check.py   # 39 assertions across all four corpora
 - **Full-text, not semantic** — queries need the corpus' vocabulary. That is precisely where agents need grounding (exact identifiers), but for concept-level questions pair it with your agent's general knowledge.
 - **Linear scan** — instant up to ~100 MB corpora; beyond that, port the scoring to an indexed engine (e.g. Tantivy).
 - Output section markers and truncation messages are in French (the author's language, kept stable for existing skills); scores and content are untouched corpus text, and errors go to stderr in English.
-- A Setext underline (`---`) directly following a list item line is treated as a heading — a rare markdown edge case.
+- A Setext underline (`---`) directly following a one-line list item is treated as a heading — a rare markdown edge case. A `---` glued under several text lines is a separator, not a heading (crawled API pages use it that way).
 
 ## Development
 
 ```bash
-cargo test                                          # 58 unit + integration tests
+cargo test                                          # 65 unit + integration tests
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 python scripts/relevance_check.py                   # relevance suite on local corpora (docs/, gitignored)

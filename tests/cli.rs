@@ -177,3 +177,60 @@ fn directory_without_markdown_exits_two() {
     assert!(stdout.is_empty());
     assert!(stderr.contains("no .md file"));
 }
+
+fn corpus_file(name: &str, text: &str) -> String {
+    let dir = std::env::temp_dir().join(format!("mds-cli-{name}-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let file = dir.join("corpus.md");
+    std::fs::write(&file, text).unwrap();
+    file.to_string_lossy().into_owned()
+}
+
+/// Crawled API pages glue `---` under the last description line: that must
+/// not turn the text block into a giant heading.
+#[test]
+fn glued_separator_does_not_create_a_giant_heading() {
+    let corpus = corpus_file(
+        "setext",
+        "# Server\n\n## Methods\n\nvoid **update_set_value**(id: RID) \nSets element text value.\n---\n\n## Other\n\nunrelated\n",
+    );
+    let (code, stdout, _) = run(&[&corpus, "update_set_value", "--top-k", "1"]);
+    assert_eq!(code, 0);
+    assert!(stdout.contains("## Methods"), "{stdout}");
+    assert!(!stdout.contains("## void"), "{stdout}");
+}
+
+#[test]
+fn front_matter_of_a_single_file_is_not_a_heading() {
+    let corpus = corpus_file(
+        "fm",
+        "---\ntitle: T\n# yaml comment\ntags: a\n---\n\n# Real\n\nbody frobnicate\n",
+    );
+    let (code, stdout, _) = run(&[&corpus, "frobnicate"]);
+    assert_eq!(code, 0);
+    assert!(stdout.contains("# Real"));
+    let (code, _, _) = run(&[&corpus, "yaml"]);
+    assert_eq!(code, 1);
+}
+
+#[test]
+fn max_level_makes_deep_headings_their_own_sections() {
+    let corpus = corpus_file(
+        "level",
+        "# Tools\n\n### Move\n\nintro\n\n#### Cursor Drag\n\ndrag the cursor to move parts\n\n### Rotate\n\nspin\n",
+    );
+    let (_, default_out, _) = run(&[&corpus, "cursor drag", "--top-k", "1"]);
+    assert!(default_out.contains("### Move"), "{default_out}");
+    let (code, deep, _) = run(&[&corpus, "cursor drag", "--top-k", "1", "--max-level", "4"]);
+    assert_eq!(code, 0);
+    assert!(deep.contains("#### Cursor Drag"), "{deep}");
+    assert!(deep.contains("> Tools > Move"), "{deep}");
+}
+
+#[test]
+fn invalid_max_level_is_rejected() {
+    for bad in ["0", "7", "x"] {
+        let (code, _, stderr) = run(&[&demo(), "boolean", "--max-level", bad]);
+        assert_eq!(code, 2, "{bad}: {stderr}");
+    }
+}

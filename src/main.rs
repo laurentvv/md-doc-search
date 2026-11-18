@@ -8,6 +8,7 @@ use std::process::ExitCode;
 
 use clap::Parser;
 
+use md_doc_search::parse::DEFAULT_MAX_LEVEL;
 use md_doc_search::{RankingParams, SearchError, render_hits, search_markdown};
 
 const DEFAULT_MAX_TOKENS: usize = 8_000;
@@ -40,6 +41,11 @@ struct Cli {
     #[arg(long, conflicts_with = "top_k_positional")]
     top_k: Option<usize>,
 
+    /// Deepest heading level that starts a section (1-6; default 3, so `####`
+    /// and deeper stay inside their parent section)
+    #[arg(long, value_name = "LEVEL", value_parser = clap::value_parser!(u8).range(1..=6))]
+    max_level: Option<u8>,
+
     /// Fold accented characters (é -> e) before matching
     #[arg(long)]
     fold_diacritics: bool,
@@ -55,6 +61,7 @@ fn main() -> ExitCode {
 
     let params = RankingParams {
         fold_diacritics: cli.fold_diacritics,
+        max_heading_level: cli.max_level.unwrap_or(DEFAULT_MAX_LEVEL),
         ..RankingParams::default()
     };
 
